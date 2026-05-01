@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════
-     DOCKERCRAFT — LANDING PAGE
+     DOCKERGENERATION — LANDING PAGE
      ════════════════════════════════════════════════════ -->
 <div class="home-root">
 
@@ -7,10 +7,12 @@
   <nav class="home-nav">
     <div class="home-nav-inner">
       <a routerLink="/" class="home-nav-logo">
-        <div class="home-logo-icon">
-          <img src="logo.png" alt="DockerCraft" class="home-logo-img">
+        <div class="home-logo-icon" style="width: 32px; height: 32px; border-radius: 8px;">
+          <div class="dg-logo" style="font-size: 0.9rem;">
+            <div class="dg-logo-inner">DG</div>
+          </div>
         </div>
-        <span class="home-logo-text">DockerCraft</span>
+        <span class="home-logo-text">DockerGeneration</span>
       </a>
 
       <div class="home-nav-links">
@@ -55,7 +57,7 @@
       </h1>
 
       <p class="hero-subtitle animate-fade-up" style="animation-delay: 0.1s">
-        DockerCraft analyse votre code, génère vos Dockerfiles et automatise<br>
+        DockerGeneration analyse votre code, génère vos Dockerfiles et automatise<br>
         vos pipelines CI/CD en quelques secondes. DevOps simplifié.
       </p>
 
@@ -102,18 +104,18 @@
           <span class="badge badge-green badge-pulse">LIVE</span>
         </div>
         <div class="terminal-body">
-          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockercraft analyze ./my-spring-app.zip</span></div>
+          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockergeneration analyze ./my-spring-app.zip</span></div>
           <div class="t-line t-info">→ Detected: <span class="text-orange">Java / Spring Boot</span></div>
           <div class="t-line t-info">→ Dependencies: <span class="text-info">Maven, JDK 17</span></div>
           <div class="t-line t-info">→ Port inferred: <span class="text-success">8080</span></div>
-          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockercraft generate --ai</span></div>
+          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockergeneration generate --ai</span></div>
           <div class="t-line t-success">✓ Dockerfile generated in 2.4s</div>
           <div class="t-line t-dimmed">FROM eclipse-temurin:17-jdk-alpine</div>
           <div class="t-line t-dimmed">WORKDIR /app</div>
           <div class="t-line t-dimmed">COPY target/*.jar app.jar</div>
           <div class="t-line t-dimmed">EXPOSE 8080</div>
           <div class="t-line t-dimmed">ENTRYPOINT ["java","-jar","app.jar"]</div>
-          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockercraft pipeline run</span></div>
+          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockergeneration pipeline run</span></div>
           <div class="t-line t-running">
             <span class="t-spinner"></span>
             CI/CD pipeline starting...
@@ -129,7 +131,7 @@
       <div class="section-header-center">
         <span class="section-eyebrow">Deux modes, une plateforme</span>
         <h2>Adapté à votre profil</h2>
-        <p>Que vous soyez étudiant en apprentissage ou développeur professionnel, DockerCraft s'adapte.</p>
+        <p>Que vous soyez étudiant en apprentissage ou développeur professionnel, DockerGeneration s'adapte.</p>
       </div>
 
       <div class="roles-grid">
@@ -278,7 +280,7 @@
   <footer class="home-footer">
     <div class="footer-cta-box glass-card">
       <h2 class="gradient-text">Prêt à automatiser votre DevOps ?</h2>
-      <p>Rejoignez DockerCraft et transformez votre workflow en quelques minutes.</p>
+      <p>Rejoignez DockerGeneration et transformez votre workflow en quelques minutes.</p>
       <div class="footer-cta-actions">
         <a routerLink="/signup" class="btn btn-primary btn-lg">
           <i class="bi bi-rocket-takeoff-fill"></i> Créer mon compte
@@ -287,7 +289,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2026 DockerCraft. Tous droits réservés.</p>
+      <p>© 2026 DockerGeneration. Tous droits réservés.</p>
       <div class="footer-tech-badges">
         <span class="badge badge-orange">Angular 19</span>
         <span class="badge badge-blue">Spring Boot</span>

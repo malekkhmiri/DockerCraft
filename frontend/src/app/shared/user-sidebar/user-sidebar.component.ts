@@ -26,7 +26,7 @@ export class UserSidebarComponent implements OnInit {
   }
 
   getPlanLabel(): string {
-    return 'DOCKERCRAFT';
+    return 'DOCKERGENERATION';
   }
 
   getPlanBadgeClass(): string {

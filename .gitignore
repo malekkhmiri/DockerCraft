@@ -25,3 +25,9 @@ docker-compose.override.yml
 # Temp
 tmp/
 temp/
+
+# Environment
+.env
+.env.*
+**/ .env
+**/ .env.*

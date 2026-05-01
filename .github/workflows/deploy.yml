@@ -1,4 +1,4 @@
-name: DockerCraft CI/CD
+﻿name: DockerGeneration CI/CD
 
 on:
   push:
@@ -36,42 +36,42 @@ jobs:
       with:
         context: ./backend/discovery
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockercraft-discovery:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/DockerGeneration-discovery:latest
 
     - name: Config Server
       uses: docker/build-push-action@v5
       with:
         context: ./backend/config-server
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockercraft-config-server:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/DockerGeneration-config-server:latest
 
     - name: Gateway
       uses: docker/build-push-action@v5
       with:
         context: ./backend/gateway
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockercraft-gateway:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/DockerGeneration-gateway:latest
 
     - name: User Service
       uses: docker/build-push-action@v5
       with:
         context: ./backend/user-service
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockercraft-user-service:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/DockerGeneration-user-service:latest
 
     - name: Project Service
       uses: docker/build-push-action@v5
       with:
         context: ./backend/project-service
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockercraft-project-service:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/DockerGeneration-project-service:latest
 
     - name: Dockerfile Service
       uses: docker/build-push-action@v5
       with:
         context: ./backend/dockerfile-service
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/dockercraft-dockerfile-service:latest
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/DockerGeneration-dockerfile-service:latest
 
   build-frontend:
     runs-on: ubuntu-latest
@@ -93,4 +93,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Deploy Notification
-      run: echo "🚀 All services built and pushed to Docker Hub. Ready for cloud deployment."
+      run: echo "ðŸš€ All services built and pushed to Docker Hub. Ready for cloud deployment."
+

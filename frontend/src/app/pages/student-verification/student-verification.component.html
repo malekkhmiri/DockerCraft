@@ -1,16 +1,16 @@
-<div class="auth-page student-verify-theme">
+﻿<div class="auth-page student-verify-theme">
   <!-- Left Column: AI/DevOps context -->
   <div class="auth-visual">
     <div class="visual-content">
       <div class="logo-group mb-5">
         <div class="logo-icon-auth">
-          <img src="logo.png" alt="DockerCraft" class="logo-image-auth">
+          <img src="logo.png" alt="DockerGeneration" class="logo-image-auth">
         </div>
-        <span class="logo-text">DockerCraft</span>
+        <span class="logo-text">DockerGeneration</span>
       </div>
 
-      <h1 class="visual-title">Vérification <span class="gradient-text-blue">Étudiante</span> par IA.</h1>
-      <p class="visual-subtitle">Uploadez votre carte d'étudiant. Notre moteur IA <span class="text-white">LLaVA</span> analyse instantanément votre document pour débloquer votre accès gratuit.</p>
+      <h1 class="visual-title">VÃ©rification <span class="gradient-text-blue">Ã‰tudiante</span> par IA.</h1>
+      <p class="visual-subtitle">Uploadez votre carte d'Ã©tudiant. Notre moteur IA <span class="text-white">LLaVA</span> analyse instantanÃ©ment votre document pour dÃ©bloquer votre accÃ¨s gratuit.</p>
       
       <div class="ai-steps mt-5">
         <div class="ai-step">
@@ -19,11 +19,11 @@
         </div>
         <div class="ai-step">
           <div class="step-num">02</div>
-          <div class="step-text">Validation des dates de validité</div>
+          <div class="step-text">Validation des dates de validitÃ©</div>
         </div>
         <div class="ai-step">
           <div class="step-num">03</div>
-          <div class="step-text">Authentification du domaine académique</div>
+          <div class="step-text">Authentification du domaine acadÃ©mique</div>
         </div>
       </div>
     </div>
@@ -38,7 +38,7 @@
       <!-- HEADER -->
       <header class="text-center mb-4">
         <h2>Validation de Statut</h2>
-        <p>Garantissez votre accès privilégié à la plateforme DockerCraft.</p>
+        <p>Garantissez votre accÃ¨s privilÃ©giÃ© Ã  la plateforme DockerGeneration.</p>
       </header>
 
       <!-- ERROR BOX -->
@@ -59,7 +59,7 @@
           
           <div *ngIf="!selectedFile" class="upload-placeholder" (click)="fileInput.click()">
             <div class="icon-circle"><i class="bi bi-person-badge"></i></div>
-            <p class="main-text">Cliquez ou glissez votre carte d'étudiant</p>
+            <p class="main-text">Cliquez ou glissez votre carte d'Ã©tudiant</p>
             <p class="sub-text">JPG, PNG ou PDF (Max 5Mo)</p>
           </div>
 
@@ -84,7 +84,7 @@
             <i class="bi bi-robot"></i> Analyser par Intelligence Artificielle
           </button>
           <button (click)="skipVerification()" class="btn btn-ghost btn-sm mt-2 opacity-75">
-            Compléter plus tard
+            ComplÃ©ter plus tard
           </button>
         </div>
       </div>
@@ -98,11 +98,11 @@
           <div class="core"><i class="bi bi-cpu"></i></div>
         </div>
         <h3>Analyse en cours...</h3>
-        <p>Notre modèle IA <span class="text-blue">Ollama/LLaVA</span> valide votre document.</p>
+        <p>Notre modÃ¨le IA <span class="text-blue">Ollama/LLaVA</span> valide votre document.</p>
         
         <div class="loading-bars mt-4">
           <div class="bar-item"><span>Scan OCR</span> <div class="bar"><div class="fill f1"></div></div></div>
-          <div class="bar-item"><span>Validation Identité</span> <div class="bar"><div class="fill f2"></div></div></div>
+          <div class="bar-item"><span>Validation IdentitÃ©</span> <div class="bar"><div class="fill f2"></div></div></div>
         </div>
       </div>
 
@@ -114,7 +114,7 @@
           </div>
           <div class="result-info">
             <h4>{{ getStatusLabel(verificationResult.status) }}</h4>
-            <p>{{ verificationResult.aiReason || 'Analyse terminée avec succès.' }}</p>
+            <p>{{ verificationResult.aiReason || 'Analyse terminÃ©e avec succÃ¨s.' }}</p>
           </div>
         </div>
 
@@ -127,19 +127,20 @@
         </div>
 
         <div class="extracted-data mt-4">
-          <div class="data-item"><span class="label">Nom détecté</span> <span class="val">{{ verificationResult.extractedName || 'Inconnu' }}</span></div>
-          <div class="data-item"><span class="label">Institution</span> <span class="val">{{ verificationResult.extractedUniversity || 'Non détectée' }}</span></div>
+          <div class="data-item"><span class="label">Nom dÃ©tectÃ©</span> <span class="val">{{ verificationResult.extractedName || 'Inconnu' }}</span></div>
+          <div class="data-item"><span class="label">Institution</span> <span class="val">{{ verificationResult.extractedUniversity || 'Non dÃ©tectÃ©e' }}</span></div>
         </div>
 
         <div class="mt-5">
           <button *ngIf="verificationResult.status !== 'REJECTED'" (click)="goToDashboard()" class="btn btn-primary w-full py-3">
-             Accéder à mon Dashboard <i class="bi bi-arrow-right"></i>
+             AccÃ©der Ã  mon Dashboard <i class="bi bi-arrow-right"></i>
           </button>
           <button *ngIf="verificationResult.status === 'REJECTED'" (click)="verificationResult = null" class="btn btn-ghost w-full mt-2">
-             Réessayer avec un autre document
+             RÃ©essayer avec un autre document
           </button>
         </div>
       </div>
     </div>
   </div>
 </div>
+

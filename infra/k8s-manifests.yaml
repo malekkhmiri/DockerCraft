@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: dockercraft
+  name: dockergeneration
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dockercraft-config
-  namespace: dockercraft
+  name: dockergeneration-config
+  namespace: dockergeneration
 data:
   SPRING_PROFILES_ACTIVE: prod
   EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery:9012/eureka/
@@ -17,7 +17,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gateway
-  namespace: dockercraft
+  namespace: dockergeneration
 spec:
   replicas: 1
   selector:
@@ -30,18 +30,18 @@ spec:
     spec:
       containers:
       - name: gateway
-        image: dockercraft-gateway:latest
+        image: dockergeneration-gateway:latest
         ports:
         - containerPort: 9013
         envFrom:
         - configMapRef:
-            name: dockercraft-config
+            name: dockergeneration-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: gateway
-  namespace: dockercraft
+  namespace: dockergeneration
 spec:
   selector:
     app: gateway

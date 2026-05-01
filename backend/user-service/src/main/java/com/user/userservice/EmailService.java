@@ -48,7 +48,7 @@ public class EmailService {
             JavaMailSenderImpl mailSender = buildMailSender();
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(fromEmail, "Dockercraft");
+            helper.setFrom(fromEmail, "DockerGeneration");
             helper.setTo(toEmail);
             helper.setSubject(subject);
             helper.setText(body, false);
@@ -65,9 +65,9 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail, "Dockercraft");
+            helper.setFrom(fromEmail, "DockerGeneration");
             helper.setTo(toEmail);
-            helper.setSubject("🔐 Votre code de vérification - Dockercraft");
+            helper.setSubject("🔑 Votre code de vérification - DockerGeneration");
             helper.setText(buildEmailHtml(code), true);
 
             mailSender.send(message);
@@ -85,7 +85,7 @@ public class EmailService {
             <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; margin: 0; padding: 40px;">
               <div style="max-width: 480px; margin: 0 auto; background: #1e293b; border-radius: 16px; padding: 40px; border: 1px solid rgba(99,102,241,0.3);">
                 <div style="text-align: center; margin-bottom: 32px;">
-                  <h1 style="color: #818cf8; font-size: 28px; margin: 0;">Dockercraft</h1>
+                  <h1 style="color: #818cf8; font-size: 28px; margin: 0;">DockerGeneration</h1>
                   <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Plateforme de déploiement automatique</p>
                 </div>
                 

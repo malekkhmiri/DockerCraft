@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # --- Infrastructure ---
+  dc-discovery:
+    image: ${DOCKERHUB_USERNAME}/dockergeneration-discovery:latest
+    ports:
+      - "8761:8761"
+    networks:
+      - dockergeneration-net
+
+  dc-config:
+    image: ${DOCKERHUB_USERNAME}/dockergeneration-config-server:latest
+    ports:
+      - "8888:8888"
+    environment:
+      - GITLAB_PASSWORD=${GITLAB_PASSWORD}
+    depends_on:
+      - dc-discovery
+    networks:
+      - dockergeneration-net
+
+  # --- Microservices ---
+  dc-gateway:
+    image: ${DOCKERHUB_USERNAME}/dockergeneration-gateway:latest
+    ports:
+      - "80:8080" # On expose le port 80 pour le web
+    depends_on:
+      - dc-config
+    networks:
+      - dockergeneration-net
+
+  dc-user:
+    image: ${DOCKERHUB_USERNAME}/dockergeneration-user-service:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dc-db:5432/DockerCraft
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - dc-db
+    networks:
+      - dockergeneration-net
+
+  dc-dockerfile:
+    image: ${DOCKERHUB_USERNAME}/dockergeneration-dockerfile-service:latest
+    environment:
+      - OLLAMA_URL=http://dc-ollama:11434
+    depends_on:
+      - dc-ollama
+    networks:
+      - dockergeneration-net
+
+  # --- Databases & IA ---
+  dc-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=DockerCraft
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - dockergeneration-net
+
+  dc-ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - dockergeneration-net
+
+networks:
+  dockergeneration-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  ollama_data:

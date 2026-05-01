@@ -1,6 +1,6 @@
-# DockerCraft 🚀
+# DockerGeneration 🚀
 
-**DockerCraft** is an AI-powered platform for automated Dockerfile generation and CI/CD orchestration. It analyzes your project structure and generates optimal, production-ready Dockerfiles using CodeLlama.
+**DockerGeneration** is an AI-powered platform for automated Dockerfile generation and CI/CD orchestration. It analyzes your project structure and generates optimal, production-ready Dockerfiles using CodeLlama.
 
 ## 🏗️ Architecture
 - **Backend**: Microservices built with Spring Boot 3.4
@@ -38,7 +38,7 @@ ng serve
 ```
 
 ## 🤖 AI Integration
-DockerCraft uses **Ollama** with the `codellama` model. Ensure Ollama is running and accessible at `http://localhost:11434`.
+DockerGeneration uses **Ollama** with the `codellama` model. Ensure Ollama is running and accessible at `http://localhost:11434`.
 
 ## 🛡️ Role-Based Access Control
 - **Admin**: Full platform supervision, user management, and global monitoring.
