@@ -1,0 +1,265 @@
+/* Dockerfile Page Styles */
+
+.dockerfile-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .dockerfile-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Project Selector ── */
+.project-selector-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--glass-bg);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--glass-border);
+  width: fit-content;
+}
+
+.project-select {
+  background: transparent;
+  border: none;
+  color: var(--text-200);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.project-select option {
+  background: var(--bg-800);
+  color: var(--text-200);
+}
+
+/* ── Editor Card ── */
+.editor-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-info i {
+  font-size: 1.25rem;
+}
+
+.filename {
+  font-weight: 700;
+  color: var(--text-100);
+}
+
+.stats-mini {
+  font-size: 0.72rem;
+  color: var(--text-500);
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.divider-v {
+  width: 1px;
+  height: 24px;
+  background: var(--glass-border);
+  margin: 0 0.5rem;
+}
+
+/* ── Editor Body ── */
+.editor-body {
+  display: flex;
+  background: rgba(4, 9, 20, 0.95);
+  min-height: 500px;
+  max-height: 800px;
+  overflow: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  position: relative;
+}
+
+.line-numbers {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid var(--glass-border);
+  text-align: right;
+  min-width: 48px;
+  color: var(--text-500);
+  font-size: 0.82rem;
+  user-select: none;
+}
+
+.code-view {
+  margin: 0;
+  padding: 1.5rem;
+  color: #c9d1d9;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.code-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #c9d1d9;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  padding: 1.5rem;
+  resize: none;
+  font-family: inherit;
+  width: 100%;
+}
+
+/* ── Info Panel ── */
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-item .label {
+  font-size: 0.8rem;
+  color: var(--text-400);
+}
+
+.info-item .val {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-200);
+}
+
+/* Learning & Pro tips */
+.learning-tips, .pro-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tip {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.tip i {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.tip p {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--text-400);
+}
+
+.tip strong {
+  color: var(--text-200);
+}
+
+.stat-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-400);
+  font-weight: 500;
+}
+
+/* ── Locked Feature Block (STUDENT_FREE) ── */
+.locked-feature-card {
+  border-color: rgba(245,158,11,0.2) !important;
+  background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, rgba(255,107,0,0.04) 100%) !important;
+}
+
+.locked-feature-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.locked-icon {
+  color: #FBBF24;
+  font-size: 0.9rem;
+}
+
+.locked-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #FBBF24;
+}
+
+.locked-desc {
+  font-size: 0.78rem;
+  color: var(--text-400);
+  line-height: 1.5;
+  margin-bottom: 0.85rem;
+}
+
+.locked-desc strong {
+  color: var(--text-200);
+}
+
+
+/* ── Toast Notifications ── */
+.toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+}
+
+.toast-msg {
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-100);
+  animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.loader-container {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.loader-container p {
+  margin-top: 1.5rem;
+  color: var(--text-400);
+}

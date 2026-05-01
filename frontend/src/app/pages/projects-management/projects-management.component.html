@@ -1,0 +1,84 @@
+<div class="admin-layout">
+    <app-admin-sidebar></app-admin-sidebar>
+
+    <main class="content-area">
+        <header class="page-header header-animate">
+            <div>
+                <div class="page-badge"><i class="bi bi-folder2-open me-1"></i> Projets</div>
+                <h1 class="page-title">Gestion des Projets</h1>
+                <p class="page-subtitle">Bienvenue, {{getUsername()}} ! Superviser tous les projets de la plateforme.
+                </p>
+            </div>
+            <div class="header-actions">
+                <select class="form-select-sm" [(ngModel)]="statusFilter">
+                    <option value="">Tous les statuts</option>
+                    <option value="SUCCESS">Success</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="UPLOADED">Uploaded</option>
+                </select>
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control-sm" placeholder="Rechercher..." [(ngModel)]="searchTerm">
+                </div>
+            </div>
+        </header>
+
+        <div class="card bg-surface">
+            <div class="table-responsive">
+                <div *ngIf="loading" class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Chargement des projets...</p>
+                </div>
+
+                <table *ngIf="!loading" class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">PROJET</th>
+                            <th>UTILISATEUR</th>
+                            <th>LANGAGE</th>
+                            <th>STATUT CI/CD</th>
+                            <th>DATE D'UPLOAD</th>
+                            <th class="text-end pe-3">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let project of filteredProjects" [routerLink]="['/admin/project', project.id]"
+                            class="table-row">
+                            <td class="ps-3">
+                                <div class="project-cell">
+                                    <div class="project-icon">
+                                        {{project.name.charAt(0).toUpperCase()}}
+                                    </div>
+                                    <span class="fw-medium">{{project.name}}</span>
+                                </div>
+                            </td>
+                            <td><span class="small opacity-75">{{project.user}}</span></td>
+                            <td>
+                                <span class="lang-badge">
+                                    {{getLanguageDisplay(project.language)}}
+                                </span>
+                            </td>
+                            <td><span
+                                    [className]="'status-pill ' + (project.status.toLowerCase() || 'default')">{{project.status}}</span>
+                            </td>
+                            <td><span class="text-secondary small">{{project.uploadDate}}</span></td>
+                            <td class="text-end pe-3">
+                                <button class="btn-delete"
+                                    (click)="deleteProject(project.id); $event.stopPropagation()">
+                                    <i class="bi bi-trash"></i> Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="!loading && filteredProjects.length === 0">
+                            <td colspan="6" class="text-center p-5 border-0">
+                                <i class="bi bi-folder2-open display-1 opacity-10"></i>
+                                <p class="mt-3 text-secondary">Aucun projet trouvé.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>

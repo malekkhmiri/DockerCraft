@@ -1,0 +1,18 @@
+server:
+  port: 9017
+ 
+spring:
+  application:
+    name: pipeline-service
+  datasource:
+    url: jdbc:postgresql://db:5432/pipeline_automation
+    username: pfe
+    password: pfe
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true

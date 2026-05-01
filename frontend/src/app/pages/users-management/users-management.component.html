@@ -1,0 +1,233 @@
+<div class="admin-layout">
+    <app-admin-sidebar></app-admin-sidebar>
+
+    <!-- Toasts -->
+    <div class="toast-stack">
+        <div *ngFor="let t of toasts" class="toast-item toast-{{t.type}}">
+            <i class="bi" [ngClass]="{
+                'bi-check-circle-fill': t.type === 'success',
+                'bi-x-circle-fill': t.type === 'error',
+                'bi-info-circle-fill': t.type === 'info'
+            }"></i>
+            {{ t.message }}
+            <button class="toast-close" (click)="removeToast(t.id)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </div>
+
+    <main class="users-main">
+        <!-- Header -->
+        <header class="page-header">
+            <div>
+                <div class="page-badge"><i class="bi bi-people-fill me-1"></i> Utilisateurs</div>
+                <h1 class="page-title">Gestion des Utilisateurs</h1>
+                <p class="page-subtitle">{{ totalUsers }} compte(s) au total · {{ activeUsers }} actif(s) · {{
+                    adminCount }} admin(s)</p>
+            </div>
+            <button class="btn-refresh" (click)="loadUsers()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Actualiser
+            </button>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="user-stats">
+            <div class="ustat-card blue">
+                <div class="ustat-val">{{ totalUsers }}</div>
+                <div class="ustat-label">Total</div>
+            </div>
+            <div class="ustat-card green">
+                <div class="ustat-val">{{ activeUsers }}</div>
+                <div class="ustat-label">Actifs</div>
+            </div>
+            <div class="ustat-card amber">
+                <div class="ustat-val">{{ totalUsers - activeUsers }}</div>
+                <div class="ustat-label">Désactivés</div>
+            </div>
+            <div class="ustat-card purple">
+                <div class="ustat-val">{{ adminCount }}</div>
+                <div class="ustat-label">Admins</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <div class="search-wrap">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="search-field" placeholder="Rechercher par nom ou email…"
+                    [(ngModel)]="searchTerm" (input)="currentPage=1">
+            </div>
+            <select class="filter-sel" [(ngModel)]="roleFilter" (change)="currentPage=1">
+                <option value="">Tous les rôles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="USER">User</option>
+            </select>
+            <select class="filter-sel" [(ngModel)]="statusFilter" (change)="currentPage=1">
+                <option value="">Tous les statuts</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Désactivés</option>
+            </select>
+            <span class="filter-result">{{ filteredUsers.length }} résultat(s)</span>
+        </div>
+
+        <!-- Table -->
+        <div class="glass-card table-card">
+            <div class="loading-row" *ngIf="loading">
+                <div class="spinner"></div>
+                <span>Chargement des utilisateurs…</span>
+            </div>
+
+            <div class="table-wrap" *ngIf="!loading">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>UTILISATEUR</th>
+                            <th>EMAIL</th>
+                            <th>RÔLE</th>
+                            <th>STATUT</th>
+                            <th>INSCRIPTION</th>
+                            <th class="text-end">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let user of paginatedUsers" class="table-row">
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar avatar-{{getAvatarColor(user.username)}}">
+                                        {{ user.username?.charAt(0)?.toUpperCase() }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium small">{{ user.username }}</div>
+                                        <div class="user-id">#{{ user.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="small text-secondary">{{ user.email }}</td>
+                            <td>
+                                <span [class]="getBadgeClass(user.role)">{{ user.role }}</span>
+                            </td>
+                            <td>
+                                <span class="status-dot" [class.status-active]="user.active"
+                                    [class.status-inactive]="!user.active"></span>
+                                <span class="small" [class.text-success]="user.active"
+                                    [class.text-muted]="!user.active">
+                                    {{ user.active ? 'Actif' : 'Désactivé' }}
+                                </span>
+                            </td>
+                            <td class="small text-secondary">{{ formatDate(user.createdAt) }}</td>
+                            <td class="text-end">
+                                <div class="action-btns">
+                                    <button class="act-btn info" (click)="viewUser(user)" title="Voir le profil">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="act-btn" [routerLink]="['/admin/projects']"
+                                        [queryParams]="{user: user.username}" title="Voir les projets">
+                                        <i class="bi bi-folder2-open"></i>
+                                    </button>
+                                    <button *ngIf="user.role !== 'ADMIN'"
+                                        [class]="'act-btn ' + (user.active ? 'warn' : 'success')"
+                                        (click)="openConfirm('toggle', user)"
+                                        [title]="user.active ? 'Désactiver' : 'Activer'">
+                                        <i [class]="'bi ' + (user.active ? 'bi-person-x' : 'bi-person-check')"></i>
+                                    </button>
+                                    <button *ngIf="user.role !== 'ADMIN'" class="act-btn danger"
+                                        (click)="openConfirm('delete', user)" title="Supprimer">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="empty-state" *ngIf="filteredUsers.length === 0">
+                    <i class="bi bi-people display-4 opacity-25"></i>
+                    <p class="mt-2 text-secondary">Aucun utilisateur ne correspond aux critères</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-row" *ngIf="totalPages > 1">
+                <span class="page-info">{{ (currentPage-1)*pageSize + 1 }}–{{ Math.min(currentPage*pageSize,
+                    filteredUsers.length) }} sur {{ filteredUsers.length }}</span>
+                <div class="page-btns">
+                    <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button *ngFor="let p of pageRange" class="page-btn" [class.active]="p === currentPage"
+                        (click)="goToPage(p)">{{ p }}</button>
+                    <button class="page-btn" (click)="goToPage(currentPage + 1)"
+                        [disabled]="currentPage === totalPages">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- User Detail Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="showModal = false">
+    <div class="modal-box" (click)="$event.stopPropagation()" *ngIf="selectedUser">
+        <div class="modal-header">
+            <div class="modal-avatar avatar-{{getAvatarColor(selectedUser.username)}}">
+                {{ selectedUser.username?.charAt(0)?.toUpperCase() }}
+            </div>
+            <div class="modal-user-info">
+                <h3 class="modal-username">{{ selectedUser.username }}</h3>
+                <div class="d-flex gap-2 mt-1 flex-wrap">
+                    <span [class]="getBadgeClass(selectedUser.role)">{{ selectedUser.role }}</span>
+                    <span class="status-badge" [class.status-badge-active]="selectedUser.active"
+                        [class.status-badge-inactive]="!selectedUser.active">
+                        {{ selectedUser.active ? '✅ Actif' : '🔴 Désactivé' }}
+                    </span>
+                </div>
+            </div>
+            <button class="modal-close" (click)="showModal = false"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-field">
+                <span class="field-label"><i class="bi bi-envelope me-2"></i>Email</span>
+                <span class="field-value">{{ selectedUser.email }}</span>
+            </div>
+            <div class="modal-field">
+                <span class="field-label"><i class="bi bi-hash me-2"></i>ID</span>
+                <span class="field-value font-mono">#{{ selectedUser.id }}</span>
+            </div>
+            <div class="modal-field">
+                <span class="field-label"><i class="bi bi-calendar me-2"></i>Inscription</span>
+                <span class="field-value">{{ formatDate(selectedUser.createdAt) }}</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-btn primary" (click)="viewUserProjects(selectedUser.username)">
+                <i class="bi bi-folder2-open me-2"></i>Voir ses projets
+            </button>
+            <button class="modal-btn secondary" (click)="showModal = false">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="modal-overlay" *ngIf="confirmAction" (click)="confirmAction = null">
+    <div class="confirm-box" (click)="$event.stopPropagation()">
+        <div class="confirm-icon" [class.danger-icon]="confirmAction.type === 'delete'">
+            <i class="bi" [ngClass]="confirmAction.type === 'delete' ? 'bi-trash3-fill' : 'bi-person-x-fill'"></i>
+        </div>
+        <h4 class="confirm-title">
+            {{ confirmAction.type === 'delete' ? 'Supprimer ce compte ?' : (confirmAction.user.active ? 'Désactiver ce
+            compte ?' : 'Activer ce compte ?') }}
+        </h4>
+        <p class="confirm-msg">
+            <strong>{{ confirmAction.user.username }}</strong>
+            {{ confirmAction.type === 'delete' ? ' — Cette action est irréversible.' : '' }}
+        </p>
+        <div class="confirm-btns">
+            <button class="modal-btn secondary" (click)="confirmAction = null">Annuler</button>
+            <button class="modal-btn" [class]="confirmAction.type === 'delete' ? 'danger' : 'primary'"
+                (click)="executeConfirm()">
+                Confirmer
+            </button>
+        </div>
+    </div>
+</div>

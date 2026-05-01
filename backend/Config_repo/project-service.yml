@@ -1,0 +1,22 @@
+server:
+  port: 9015
+ 
+spring:
+  application:
+    name: project-service
+  datasource:
+    url: jdbc:postgresql://db:5432/pipeline_automation
+    username: pfe
+    password: pfe
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB

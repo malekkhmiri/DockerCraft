@@ -1,0 +1,243 @@
+
+:host {
+    display: block;
+    min-height: 100vh;
+    background: #070c1a;
+    color: #f1f5f9;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.content-area {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-x: hidden;
+    background:
+        radial-gradient(ellipse 60% 40% at 80% 10%, rgba(255, 103, 0, 0.07), transparent),
+        var(--bg-primary);
+}
+
+/* ── Header ──────────────────────────────────────── */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.page-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--brand-orange);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.4rem;
+}
+
+.page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+    letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+    font-size: 0.85rem;
+    color: #475569;
+    margin: 0;
+}
+
+/* ── Filter Bar ──────────────────────────────────── */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #475569;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.form-control-sm,
+.form-select-sm {
+    height: 38px;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f1f5f9 !important;
+    border-radius: 8px !important;
+    padding: 0 0.75rem !important;
+    font-size: 0.85rem !important;
+    outline: none !important;
+    transition: border-color 0.2s;
+}
+
+.search-box input {
+    padding-left: 2.2rem !important;
+    width: 250px;
+}
+
+.form-control-sm:focus,
+.form-select-sm:focus {
+    border-color: var(--brand-orange) !important;
+    box-shadow: 0 0 0 4px rgba(255, 103, 0, 0.1) !important;
+}
+
+.form-select-sm option {
+    background: #1e293b;
+}
+
+/* ── Glass Card ──────────────────────────────────── */
+.card.bg-surface {
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+
+/* ── Table ───────────────────────────────────────── */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #cbd5e1;
+}
+
+.data-table thead th {
+    padding: 0.85rem 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #334155;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.data-table tbody td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.table-row {
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.table-row:hover {
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.project-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.project-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    background: var(--brand-orange);
+}
+
+.lang-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ── Status Pills ────────────────────────────────── */
+.status-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+
+.status-pill.success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.status-pill.failed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.status-pill.in-progress {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.status-pill.uploaded {
+    background: rgba(255, 103, 0, 0.15);
+    color: var(--brand-orange);
+    border: 1px solid rgba(255, 103, 0, 0.25);
+}
+
+/* ── Actions ─────────────────────────────────────── */
+.btn-delete {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.05);
+}
+
+.header-animate {
+    animation: fadeInDown 0.5s ease-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

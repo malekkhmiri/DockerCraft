@@ -1,0 +1,27 @@
+# Maven
+**/target/
+*.jar
+*.war
+
+# Node / Angular
+**/node_modules/
+**/dist/
+.npm/
+**/angular/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+.DS_Store
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Temp
+tmp/
+temp/

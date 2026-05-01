@@ -1,0 +1,219 @@
+<!-- ════════════════════════════════════════════════════
+     DOCKERCRAFT — DASHBOARD (Unified Workspace)
+     ════════════════════════════════════════════════════ -->
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <app-user-sidebar></app-user-sidebar>
+
+  <!-- Main -->
+  <div class="main-content">
+
+    <!-- Top Bar -->
+    <header class="dc-topbar">
+      <div class="topbar-left">
+        <h2 class="pro-gradient-text">Workspace Dashboard</h2>
+        <p>Bonjour, <strong>{{ authService.getUsername() }}</strong> — {{ today | date:'EEEE d MMMM yyyy' }}</p>
+      </div>
+      <div class="topbar-actions">
+        <!-- Role Badge -->
+        <span class="badge badge-green">
+          <i class="bi bi-briefcase-fill"></i>
+          DOCKERCRAFT ACTIF
+        </span>
+        <!-- Upload CTA -->
+        <a routerLink="/upload" class="btn btn-pro animate-scale-in">
+          <i class="bi bi-plus-lg"></i>
+          Nouveau Projet
+        </a>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content">
+
+      <!-- ── Unified Analytics Row ── -->
+      <div class="pro-analytics-bar animate-fade-up mb-4">
+        <div class="analytics-item">
+          <span class="analytics-label">Taux de succès</span>
+          <span class="analytics-val text-success">{{ getSuccessRate() }}%</span>
+        </div>
+        <div class="analytics-divider"></div>
+        <div class="analytics-item">
+          <span class="analytics-label">Déploiements ce mois</span>
+          <span class="analytics-val text-orange">{{ stats.total }}</span>
+        </div>
+        <div class="analytics-divider"></div>
+        <div class="analytics-item">
+          <span class="analytics-label">En cours</span>
+          <span class="analytics-val text-info">{{ stats.inProgress }}</span>
+        </div>
+        <div class="analytics-divider"></div>
+        <div class="analytics-item">
+          <span class="analytics-label">Échecs</span>
+          <span class="analytics-val text-danger">{{ stats.failed }}</span>
+        </div>
+      </div>
+
+      <!-- ── Stats Grid ── -->
+      <div class="stat-grid animate-fade-up mb-4">
+        <!-- Total -->
+        <div class="stat-card hover-card">
+          <div class="stat-icon-wrap stat-icon-green">
+            <i class="bi bi-layers-fill"></i>
+          </div>
+          <div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">Projets Total</div>
+          </div>
+        </div>
+        <!-- Success -->
+        <div class="stat-card hover-card">
+          <div class="stat-icon-wrap stat-icon-green">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <div>
+            <div class="stat-value">{{ stats.success }}</div>
+            <div class="stat-label">Déployés avec succès</div>
+          </div>
+        </div>
+        <!-- In Progress -->
+        <div class="stat-card hover-card">
+          <div class="stat-icon-wrap stat-icon-blue">
+            <i class="bi bi-arrow-repeat"></i>
+          </div>
+          <div>
+            <div class="stat-value">{{ stats.inProgress }}</div>
+            <div class="stat-label">En cours d'exécution</div>
+          </div>
+        </div>
+        <!-- Failed -->
+        <div class="stat-card hover-card">
+          <div class="stat-icon-wrap stat-icon-red">
+            <i class="bi bi-x-circle-fill"></i>
+          </div>
+          <div>
+            <div class="stat-value">{{ stats.failed }}</div>
+            <div class="stat-label">Échecs de pipeline</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Projects Section ── -->
+      <div class="projects-section animate-fade-up">
+
+        <!-- Header -->
+        <div class="section-header-row mb-3 role-pro">
+          <div class="flex items-center gap-1">
+            <p class="section-title role-pro">Mes Projets</p>
+            <span *ngIf="!loading" class="badge badge-green">
+              {{ getFilteredProjects().length }}
+            </span>
+          </div>
+          <!-- Search -->
+          <div class="search-bar glass-card">
+            <i class="bi bi-search" style="color: var(--text-400);"></i>
+            <input type="text"
+                   placeholder="Rechercher un projet..."
+                   [(ngModel)]="searchTerm"
+                   class="search-input">
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-state">
+          <div class="skeleton-grid">
+            <div class="skeleton" style="height: 180px; border-radius: 16px;" *ngFor="let i of [1,2,3,4,5,6]"></div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && getFilteredProjects().length === 0" class="empty-state-card glass-card">
+          <div class="empty-icon">
+            <i class="bi bi-rocket-takeoff"></i>
+          </div>
+          <h3>Aucun projet pour l'instant</h3>
+          <p class="text-muted">Uploadez votre premier projet et laissez l'IA générer votre Dockerfile.</p>
+          <a routerLink="/upload" class="btn btn-pro mt-2">
+            <i class="bi bi-cloud-upload"></i>
+            Lancer mon premier projet
+          </a>
+        </div>
+
+        <!-- Project Cards Grid -->
+        <div class="project-grid" *ngIf="!loading && getFilteredProjects().length > 0">
+          <div
+            *ngFor="let project of getFilteredProjects(); let i = index"
+            class="project-card glass-card hover-card role-pro"
+            [routerLink]="['/project', project.id]"
+            [style.animation-delay]="(i * 60) + 'ms'"
+            style="animation: fadeInUp 0.4s ease both;">
+
+            <!-- Card Header -->
+            <div class="project-card-header">
+              <div class="project-card-title-group">
+                <div class="project-lang-icon" [ngClass]="getLangColor(project.language)">
+                  {{ getLangInitial(project.language) }}
+                </div>
+                <div>
+                  <h3 class="project-name">{{ project.name }}</h3>
+                  <span class="project-lang-tag">{{ project.language }}</span>
+                </div>
+              </div>
+              <div class="status-badge-pill" [ngClass]="getStatusPillClass(project.status)">
+                <span class="status-dot" [ngClass]="'status-' + project.status"></span>
+                {{ project.status | titlecase }}
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="project-card-body">
+              <div class="pro-info-row">
+                 <span class="badge badge-autogen">
+                   <i class="bi bi-robot"></i> AI-Generated
+                 </span>
+                 <span class="badge badge-blue">
+                   <i class="bi bi-stars"></i> Production Ready
+                 </span>
+              </div>
+
+              <!-- Pipeline mini stepper removed -->
+            </div>
+
+            <!-- Card Footer -->
+            <div class="project-card-footer">
+              <div class="project-meta-items">
+                <span class="meta-chip">
+                  <i class="bi bi-calendar3"></i>
+                  {{ project.createdAt | date:'dd/MM/yyyy' }}
+                </span>
+                <span class="meta-chip font-mono">
+                  <i class="bi bi-hash"></i>
+                  {{ project.reference }}
+                </span>
+              </div>
+              <i class="bi bi-arrow-right-short" style="font-size: 1.2rem; color: var(--text-400);"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Quick Actions ── -->
+      <div class="quick-actions animate-fade-up mt-4">
+        <p class="section-title role-pro">Raccourcis</p>
+        <div class="quick-grid">
+          <a routerLink="/upload" class="quick-card glass-card">
+            <div class="quick-icon stat-icon-green"><i class="bi bi-cloud-upload-fill"></i></div>
+            <span>Uploader</span>
+          </a>
+          <a routerLink="/dockerfile" class="quick-card glass-card">
+            <div class="quick-icon stat-icon-orange"><i class="bi bi-file-earmark-code-fill"></i></div>
+            <span>Dockerfiles</span>
+          </a>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->

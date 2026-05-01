@@ -1,0 +1,58 @@
+<aside class="dc-sidebar role-admin animate-slide-in">
+
+  <!-- Logo -->
+  <a routerLink="/admin/dashboard" class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <img src="logo.png" alt="DockerCraft" class="logo-image">
+    </div>
+    <div class="sidebar-logo-text">
+      <span class="brand-name">DockerCraft</span>
+      <span class="brand-role">Admin Panel</span>
+    </div>
+  </a>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <a routerLink="/admin/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-item">
+      <i class="bi bi-speedometer2"></i>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/admin/users" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-people-fill"></i>
+      <span>Utilisateurs</span>
+    </a>
+    <a routerLink="/admin/projects" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-folder2-open"></i>
+      <span>Projets</span>
+    </a>
+
+    <div class="nav-section-label">CI/CD & Docker</div>
+    <a routerLink="/admin/pipelines" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-diagram-3-fill"></i>
+      <span>Pipelines</span>
+      <span class="nav-badge live">LIVE</span>
+    </a>
+    <a routerLink="/admin/dockerfiles" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-filetype-yml"></i>
+      <span>Dockerfiles</span>
+    </a>
+    <a routerLink="/admin/images" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-box-seam-fill"></i>
+      <span>Images Docker</span>
+    </a>
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+    <div class="sidebar-user" (click)="onLogout()" data-tooltip="Se déconnecter">
+      <div class="user-avatar">{{ getUsername().substring(0, 2).toUpperCase() }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ getUsername() }}</span>
+        <span class="user-role-label">Administrateur</span>
+      </div>
+      <i class="bi bi-box-arrow-right" style="color: var(--text-500); font-size: 0.9rem;"></i>
+    </div>
+  </div>
+
+</aside>

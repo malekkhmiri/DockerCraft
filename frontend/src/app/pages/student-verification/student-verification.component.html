@@ -1,0 +1,145 @@
+<div class="auth-page student-verify-theme">
+  <!-- Left Column: AI/DevOps context -->
+  <div class="auth-visual">
+    <div class="visual-content">
+      <div class="logo-group mb-5">
+        <div class="logo-icon-auth">
+          <img src="logo.png" alt="DockerCraft" class="logo-image-auth">
+        </div>
+        <span class="logo-text">DockerCraft</span>
+      </div>
+
+      <h1 class="visual-title">Vérification <span class="gradient-text-blue">Étudiante</span> par IA.</h1>
+      <p class="visual-subtitle">Uploadez votre carte d'étudiant. Notre moteur IA <span class="text-white">LLaVA</span> analyse instantanément votre document pour débloquer votre accès gratuit.</p>
+      
+      <div class="ai-steps mt-5">
+        <div class="ai-step">
+          <div class="step-num">01</div>
+          <div class="step-text">Scan optique du document (OCR)</div>
+        </div>
+        <div class="ai-step">
+          <div class="step-num">02</div>
+          <div class="step-text">Validation des dates de validité</div>
+        </div>
+        <div class="ai-step">
+          <div class="step-num">03</div>
+          <div class="step-text">Authentification du domaine académique</div>
+        </div>
+      </div>
+    </div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <!-- Right Column: Verification Form/Result -->
+  <div class="auth-form-container">
+    <div class="auth-form-card glass-card animate-fade-up">
+      
+      <!-- HEADER -->
+      <header class="text-center mb-4">
+        <h2>Validation de Statut</h2>
+        <p>Garantissez votre accès privilégié à la plateforme DockerCraft.</p>
+      </header>
+
+      <!-- ERROR BOX -->
+      <div *ngIf="errorMessage" class="alert-error mb-4">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- MAIN STATE: NOT SUBMITTED -->
+      <div *ngIf="!verificationResult && !loading">
+        <div class="upload-zone" 
+             [class.dragging]="isDragOver"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave()"
+             (drop)="onDrop($event)">
+          
+          <input type="file" id="cardFile" #fileInput (change)="onFileSelected($event)" accept="image/*,application/pdf" hidden>
+          
+          <div *ngIf="!selectedFile" class="upload-placeholder" (click)="fileInput.click()">
+            <div class="icon-circle"><i class="bi bi-person-badge"></i></div>
+            <p class="main-text">Cliquez ou glissez votre carte d'étudiant</p>
+            <p class="sub-text">JPG, PNG ou PDF (Max 5Mo)</p>
+          </div>
+
+          <div *ngIf="selectedFile" class="preview-container">
+            <div class="preview-header">
+              <span class="file-info"><i class="bi bi-file-earmark-image"></i> {{ selectedFile.name }}</span>
+              <button class="btn btn-ghost btn-sm btn-icon" (click)="removeFile()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            
+            <div class="preview-img-box">
+              <img *ngIf="previewUrl" [src]="previewUrl" alt="Card Preview">
+              <div *ngIf="isPdf()" class="pdf-icon-preview"><i class="bi bi-file-earmark-pdf"></i> PDF Document</div>
+              
+              <!-- Scanning Animation Overlay -->
+              <div class="scan-line"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions-grid mt-4">
+          <button (click)="onSubmit()" class="btn btn-student w-full py-3" [disabled]="isSubmitDisabled">
+            <i class="bi bi-robot"></i> Analyser par Intelligence Artificielle
+          </button>
+          <button (click)="skipVerification()" class="btn btn-ghost btn-sm mt-2 opacity-75">
+            Compléter plus tard
+          </button>
+        </div>
+      </div>
+
+      <!-- STATE: LOADING / ANALYSIS -->
+      <div *ngIf="loading" class="analysis-state text-center py-5">
+        <div class="orbit-loader mb-4">
+          <div class="ring r1"></div>
+          <div class="ring r2"></div>
+          <div class="ring r3"></div>
+          <div class="core"><i class="bi bi-cpu"></i></div>
+        </div>
+        <h3>Analyse en cours...</h3>
+        <p>Notre modèle IA <span class="text-blue">Ollama/LLaVA</span> valide votre document.</p>
+        
+        <div class="loading-bars mt-4">
+          <div class="bar-item"><span>Scan OCR</span> <div class="bar"><div class="fill f1"></div></div></div>
+          <div class="bar-item"><span>Validation Identité</span> <div class="bar"><div class="fill f2"></div></div></div>
+        </div>
+      </div>
+
+      <!-- STATE: RESULT -->
+      <div *ngIf="verificationResult" class="result-state animate-fade-in">
+        <div class="result-card" [ngClass]="getStatusClass(verificationResult.status)">
+          <div class="result-icon">
+            <i class="bi" [ngClass]="verificationResult.status === 'REJECTED' ? 'bi-x-circle' : 'bi-patch-check'"></i>
+          </div>
+          <div class="result-info">
+            <h4>{{ getStatusLabel(verificationResult.status) }}</h4>
+            <p>{{ verificationResult.aiReason || 'Analyse terminée avec succès.' }}</p>
+          </div>
+        </div>
+
+        <div class="confidence-box mt-4" *ngIf="verificationResult.status !== 'REJECTED'">
+           <div class="conf-head">
+              <span>Indice de confiance IA</span>
+              <span class="conf-val">{{ getConfidencePercent() }}%</span>
+           </div>
+           <div class="conf-bar"><div class="conf-fill" [style.width.%]="getConfidencePercent()"></div></div>
+        </div>
+
+        <div class="extracted-data mt-4">
+          <div class="data-item"><span class="label">Nom détecté</span> <span class="val">{{ verificationResult.extractedName || 'Inconnu' }}</span></div>
+          <div class="data-item"><span class="label">Institution</span> <span class="val">{{ verificationResult.extractedUniversity || 'Non détectée' }}</span></div>
+        </div>
+
+        <div class="mt-5">
+          <button *ngIf="verificationResult.status !== 'REJECTED'" (click)="goToDashboard()" class="btn btn-primary w-full py-3">
+             Accéder à mon Dashboard <i class="bi bi-arrow-right"></i>
+          </button>
+          <button *ngIf="verificationResult.status === 'REJECTED'" (click)="verificationResult = null" class="btn btn-ghost w-full mt-2">
+             Réessayer avec un autre document
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,50 @@
+<aside class="dc-sidebar" [ngClass]="getRoleClass()">
+
+  <!-- Logo -->
+  <a routerLink="/dashboard" class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <img src="logo.png" alt="DockerCraft" class="logo-image">
+    </div>
+    <div class="sidebar-logo-text">
+      <span class="brand-name">DockerCraft</span>
+      <span class="brand-role">PLATEFORME DEVOPS</span>
+    </div>
+  </a>
+
+  <!-- Navigation — Unified for all users -->
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Workspace</div>
+
+    <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-item">
+      <i class="bi bi-speedometer2"></i>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/upload" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-cloud-upload-fill"></i>
+      <span>Nouveau Projet</span>
+    </a>
+    <a routerLink="/dockerfile" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-file-earmark-code-fill"></i>
+      <span>Dockerfiles</span>
+    </a>
+
+    <div class="nav-section-label">Compte</div>
+    <a routerLink="/profile" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-person-circle"></i>
+      <span>Profil & Sécurité</span>
+    </a>
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+    <div class="sidebar-user" (click)="onLogout()" data-tooltip="Se déconnecter">
+      <div class="user-avatar">{{ initials }}</div>
+      <div class="user-info">
+        <span class="user-name">{{ username }}</span>
+        <span class="user-plan-badge pro">ACTIF</span>
+      </div>
+      <i class="bi bi-box-arrow-right" style="color: var(--text-500); font-size: 0.9rem;"></i>
+    </div>
+  </div>
+
+</aside>

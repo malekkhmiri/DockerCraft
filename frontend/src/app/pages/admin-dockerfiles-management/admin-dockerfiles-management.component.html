@@ -1,0 +1,72 @@
+<div class="admin-layout">
+    <app-admin-sidebar></app-admin-sidebar>
+
+    <main class="content-area">
+        <header class="page-header header-animate">
+            <div>
+                <div class="page-badge"><i class="bi bi-file-earmark-code me-1"></i> Dockerfiles</div>
+                <h1 class="page-title">Gestion des Dockerfiles</h1>
+                <p class="page-subtitle">Bienvenue, {{getUsername()}} ! Visualisez et gérez tous les Dockerfiles
+                    générés.</p>
+            </div>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control-sm" placeholder="Rechercher (ID, Projet, Contenu)..."
+                        [(ngModel)]="searchTerm">
+                </div>
+            </div>
+        </header>
+
+        <div class="card bg-surface">
+            <div class="table-responsive">
+                <div *ngIf="loading" class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Chargement des Dockerfiles...</p>
+                </div>
+
+                <table *ngIf="!loading" class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>PROJET</th>
+                            <th>DATE DE GÉNÉRATION</th>
+                            <th>APERÇU</th>
+                            <th class="text-end pe-3">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let df of filteredDockerfiles" class="table-row"
+                            (click)="editDockerfile(df.projectId!)">
+                            <td class="ps-3"><span class="id-badge">#{{df.id}}</span></td>
+                            <td>
+                                <div class="project-cell">
+                                    <div class="project-icon">P</div>
+                                    <span class="fw-medium">Projet #{{df.projectId}}</span>
+                                </div>
+                            </td>
+                            <td><span class="opacity-75 small">{{df.createdAt | date: 'dd/MM/yyyy HH:mm'}}</span></td>
+                            <td>
+                                <code class="preview d-inline-block text-truncate" style="max-width: 250px;">
+                                    {{df.content}}
+                                </code>
+                            </td>
+                            <td class="text-end pe-3">
+                                <button class="btn-edit"
+                                    (click)="editDockerfile(df.projectId!); $event.stopPropagation()">
+                                    <i class="bi bi-pencil-square"></i> Modifier
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="!loading && filteredDockerfiles.length === 0">
+                            <td colspan="5" class="text-center p-5 border-0">
+                                <i class="bi bi-file-earmark-code display-1 opacity-10"></i>
+                                <p class="mt-3 text-secondary">Aucun Dockerfile trouvé.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>

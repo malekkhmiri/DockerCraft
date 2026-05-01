@@ -1,0 +1,51 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://dc-discovery:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  file:
+    name: logs/${spring.application.name}.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.user: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000
+
+spring:
+  rabbitmq:
+    host: dc-rabbitmq
+    port: 5672
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://dc-db:5432/DockerCraft
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update

@@ -1,0 +1,275 @@
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <app-admin-sidebar></app-admin-sidebar>
+
+    <!-- Main Content -->
+    <main class="content-area">
+        <!-- Header -->
+        <header class="page-header">
+            <div class="header-left">
+                <div class="page-badge">
+                    <span class="live-dot"></span> Dashboard
+                </div>
+                <h1 class="page-title">Supervision Globale</h1>
+                <p class="page-subtitle">Bienvenue, <strong>{{getUsername()}}</strong> — Vue d'ensemble de la plateforme
+                </p>
+            </div>
+            <div class="header-right">
+                <button class="icon-btn" title="Actualiser" (click)="loadData()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button class="btn-primary-sm">
+                    <i class="bi bi-download me-1"></i> Exporter
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <section class="stats-grid stagger-in">
+            <div class="stat-card blue" routerLink="/admin/users">
+                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Utilisateurs</div>
+                    <div class="stat-value">{{ displayStats.totalUsers }}</div>
+                    <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i> Actifs</div>
+                </div>
+                <div class="stat-bg-icon"><i class="bi bi-people-fill"></i></div>
+            </div>
+
+            <div class="stat-card purple" routerLink="/admin/projects">
+                <div class="stat-icon"><i class="bi bi-folder2-open"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Projets</div>
+                    <div class="stat-value">{{ displayStats.totalProjects }}</div>
+                    <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i> Total</div>
+                </div>
+                <div class="stat-bg-icon"><i class="bi bi-folder2-open"></i></div>
+            </div>
+
+            <div class="stat-card cyan" routerLink="/admin/dockerfiles">
+                <div class="stat-icon"><i class="bi bi-filetype-yml"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Dockerfiles</div>
+                    <div class="stat-value">{{ displayStats.generatedDockerfiles }}</div>
+                    <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i> Générés</div>
+                </div>
+                <div class="stat-bg-icon"><i class="bi bi-filetype-yml"></i></div>
+            </div>
+
+            <div class="stat-card amber" routerLink="/admin/pipelines">
+                <div class="stat-icon"><i class="bi bi-diagram-3-fill"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Pipelines</div>
+                    <div class="stat-value">{{ displayStats.totalPipelines }}</div>
+                    <div class="stat-trend" [class.up]="getSuccessRate() >= 80" [class.down]="getSuccessRate() < 80">
+                        <i class="bi bi-shield-check"></i> {{ getSuccessRate() }}% succès
+                    </div>
+                </div>
+                <div class="stat-bg-icon"><i class="bi bi-diagram-3-fill"></i></div>
+            </div>
+
+            <div class="stat-card green" routerLink="/admin/images">
+                <div class="stat-icon"><i class="bi bi-box-seam-fill"></i></div>
+                <div class="stat-body">
+                    <div class="stat-label">Images Docker</div>
+                    <div class="stat-value">{{ displayStats.totalImages }}</div>
+                    <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i> Registry</div>
+                </div>
+                <div class="stat-bg-icon"><i class="bi bi-box-seam-fill"></i></div>
+            </div>
+        </section>
+
+        <!-- Middle section: Chart + Activity -->
+        <section class="two-col-grid">
+            <!-- Pipeline Chart -->
+            <div class="glass-card chart-section">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Répartition des
+                            Pipelines</h2>
+                        <p class="card-subtitle">Statuts sur les {{ pipelines.length }} dernières exécutions</p>
+                    </div>
+                    <a routerLink="/admin/pipelines" class="card-link">Voir tout <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="chart-container">
+                    <canvas #pipelineChart></canvas>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="glass-card activity-section">
+                <div class="card-header-row">
+                    <div>
+                        <h2 class="card-title"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Activité
+                            Système</h2>
+                        <p class="card-subtitle">Événements récents en temps réel</p>
+                    </div>
+                    <span class="live-indicator"><span class="live-dot"></span> LIVE</span>
+                </div>
+                <div class="activity-feed">
+                    <div class="activity-item" *ngFor="let act of activities">
+                        <div class="act-icon">
+                            <i class="bi" [ngClass]="getActivityIcon(act.type)"></i>
+                        </div>
+                        <div class="act-body">
+                            <p class="act-message">{{ act.message }}</p>
+                            <div class="act-meta">
+                                <span class="act-user"><i class="bi bi-person-fill me-1"></i>{{ act.user }}</span>
+                                <span class="act-time">{{ act.timestamp }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="empty-state" *ngIf="activities.length === 0">
+                        <i class="bi bi-clock-history display-4 opacity-25"></i>
+                        <p class="mt-2 text-secondary small">Aucune activité récente</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projets Récents -->
+        <section class="glass-card">
+            <div class="card-header-row flex-wrap gap-3">
+                <div>
+                    <h2 class="card-title"><i class="bi bi-folder2-open text-purple me-2"></i>Projets Récents</h2>
+                    <p class="card-subtitle">{{ filteredProjects.length }} projet(s) trouvé(s)</p>
+                </div>
+                <div class="filter-row">
+                    <!-- Status filter -->
+                    <select class="filter-select" [(ngModel)]="statusFilter" (change)="currentPage=1">
+                        <option value="">Tous les statuts</option>
+                        <option value="SUCCESS">✅ Succès</option>
+                        <option value="IN_PROGRESS">⏳ En cours</option>
+                        <option value="FAILED">❌ Échec</option>
+                        <option value="UPLOADED">📦 Uploadé</option>
+                    </select>
+                    <!-- Search -->
+                    <div class="search-input-wrap">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Rechercher projet ou user…"
+                            [(ngModel)]="searchTerm" (input)="currentPage=1">
+                    </div>
+                    <a routerLink="/admin/projects" class="btn-outline-sm">
+                        <i class="bi bi-table me-1"></i> Tout voir
+                    </a>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>PROJET</th>
+                            <th>UTILISATEUR</th>
+                            <th>LANGAGE</th>
+                            <th>STATUT CI/CD</th>
+                            <th>DATE</th>
+                            <th class="text-end">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let p of paginatedProjects" [routerLink]="['/admin/project', p.id]"
+                            class="table-row-hover">
+                            <td>
+                                <div class="project-cell">
+                                    <div class="project-avatar">{{ p.name.charAt(0).toUpperCase() }}</div>
+                                    <span class="fw-medium">{{ p.name }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-dot">{{ p.user.charAt(0).toUpperCase() }}</div>
+                                    <span class="small">{{ p.user }}</span>
+                                </div>
+                            </td>
+                            <td><span class="lang-badge">{{ getLanguageDisplay(p.language) }}</span></td>
+                            <td><span [class]="getStatusClass(p.status)">{{ getStatusLabel(p.status) }}</span></td>
+                            <td class="text-secondary small">{{ p.uploadDate | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-end">
+                                <a [routerLink]="['/admin/project', p.id]" class="icon-btn-sm"
+                                    (click)="$event.stopPropagation()" title="Voir détail">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr *ngIf="paginatedProjects.length === 0">
+                            <td colspan="6" class="empty-row">
+                                <i class="bi bi-search opacity-25"></i> Aucun projet trouvé
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-row" *ngIf="totalPages > 1">
+                <span class="page-info">Page {{ currentPage }} / {{ totalPages }} — {{ filteredProjects.length }}
+                    résultats</span>
+                <div class="page-btns">
+                    <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button *ngFor="let p of pageRange" class="page-btn" [class.active]="p === currentPage"
+                        (click)="goToPage(p)">{{ p }}</button>
+                    <button class="page-btn" (click)="goToPage(currentPage + 1)"
+                        [disabled]="currentPage === totalPages">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pipelines & Docker Images -->
+        <section class="two-col-grid">
+            <!-- Pipelines récentes -->
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <h2 class="card-title"><i class="bi bi-diagram-3-fill text-amber me-2"></i>Dernières Exécutions</h2>
+                    <a routerLink="/admin/pipelines" class="card-link">Monitoring <i class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="pipeline-list">
+                    <div class="pipeline-item" *ngFor="let pl of pipelines.slice(0,5)">
+                        <div class="pipeline-left">
+                            <span class="pipeline-id">#{{ pl.id }}</span>
+                            <div>
+                                <div class="fw-medium small">{{ pl.projectName }}</div>
+                                <div class="x-small text-secondary">{{ pl.date }}</div>
+                            </div>
+                        </div>
+                        <div class="pipeline-right">
+                            <span class="small text-secondary me-3">{{ pl.duration || '—' }}</span>
+                            <span [class]="getStatusClass(pl.status)">{{ getStatusLabel(pl.status) }}</span>
+                        </div>
+                    </div>
+                    <div class="empty-state" *ngIf="pipelines.length === 0">
+                        <i class="bi bi-diagram-3 display-4 opacity-25"></i>
+                        <p class="mt-2 text-secondary small">Aucun pipeline récent</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Docker Images -->
+            <div class="glass-card">
+                <div class="card-header-row">
+                    <h2 class="card-title"><i class="bi bi-box-seam-fill text-green me-2"></i>Images Registry</h2>
+                    <a routerLink="/admin/images" class="card-link">Tout le registre <i
+                            class="bi bi-arrow-right"></i></a>
+                </div>
+                <div class="image-list">
+                    <div class="image-item" *ngFor="let img of dockerImages.slice(0,5)">
+                        <div class="image-icon"><i class="bi bi-box2-fill"></i></div>
+                        <div class="image-body">
+                            <div class="image-name">{{ img.name }}</div>
+                            <div class="image-url">{{ img.registryUrl }}</div>
+                        </div>
+                        <span class="image-tag">{{ img.tag }}</span>
+                    </div>
+                    <div class="empty-state" *ngIf="dockerImages.length === 0">
+                        <i class="bi bi-box display-4 opacity-25"></i>
+                        <p class="mt-2 text-secondary small">Aucune image disponible</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>

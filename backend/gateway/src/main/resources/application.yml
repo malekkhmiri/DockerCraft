@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: gateway
+  config:
+    import: "optional:configserver:http://dc-config-server:8888"
+  cloud:
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "http://localhost:4200"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
+      default-filters:
+        - AddRequestHeader=X-Internal-Secret,${GATEWAY_INTERNAL_SECRET}
+      # Augmentation des timeouts pour l'IA (4 minutes d'attente max)
+      httpclient:
+        connect-timeout: 10000
+        response-timeout: 240s
+
+server:
+  port: 8080

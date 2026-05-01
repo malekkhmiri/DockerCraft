@@ -1,0 +1,51 @@
+<nav *ngIf="show" class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" routerLink="/dashboard">
+      <img src="logo.png" alt="Logo" class="navbar-logo-img me-2">
+      DockerCraft
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" [routerLink]="isAdmin() ? '/admin/dashboard' : '/dashboard'"
+            routerLinkActive="active">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/upload" routerLinkActive="active">Upload</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/pipeline" routerLinkActive="active">Pipelines</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/images" routerLinkActive="active">Images</a>
+        </li>
+      </ul>
+      <ul class="navbar-nav align-items-center">
+        <!-- Theme Toggle -->
+        <li class="nav-item me-3">
+          <button class="btn btn-link nav-link border-0 p-0 theme-btn" (click)="toggleTheme()"
+            [title]="isLightMode() ? 'Passer au mode sombre' : 'Passer au mode clair'">
+            <i class="fas" [ngClass]="isLightMode() ? 'fa-moon text-dark' : 'fa-sun text-warning'"></i>
+          </button>
+        </li>
+
+        <li class="nav-item dropdown" *ngIf="isLoggedIn()">
+          <a class="nav-link text-white me-3" routerLink="/profile" routerLinkActive="active">
+            <i class="fas fa-user-circle me-1"></i>
+            {{ getUsername() }} <span class="role-bubble ms-1" [ngClass]="isAdmin() ? 'bg-danger' : isPro() ? 'bg-success' : 'bg-primary'">{{ getRoleLabel() }}</span>
+          </a>
+        </li>
+        <li class="nav-item" *ngIf="isLoggedIn()">
+          <button class="btn btn-outline-light btn-sm" (click)="onLogout()">
+            <i class="fas fa-sign-out-alt me-1"></i>
+            Déconnexion
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

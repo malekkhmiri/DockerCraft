@@ -1,0 +1,83 @@
+.navbar {
+  background: rgba(7, 12, 26, 0.8) !important;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1rem 0;
+  transition: all 0.3s ease;
+}
+
+.navbar-brand {
+  font-weight: 800;
+  letter-spacing: -1px;
+  font-size: 1.5rem;
+}
+
+.brand-accent {
+  color: var(--brand-orange);
+}
+
+.nav-link {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 0.5rem 1.25rem !important;
+  transition: all 0.2s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--brand-orange) !important;
+  text-shadow: 0 0 10px var(--brand-orange-glow);
+}
+
+.btn-login {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.btn-login:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: white;
+}
+
+.btn-signup {
+  background: var(--brand-orange);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-signup:hover {
+  background: var(--brand-orange-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px var(--brand-orange-glow);
+}
+
+.user-profile-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.4rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+}
+
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--brand-orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+}

@@ -1,0 +1,153 @@
+<div class="project-detail-container">
+    <!-- Navigation Retour -->
+    <div class="top-nav">
+        <button class="btn-back" routerLink="/dashboard">
+            <i class="fas fa-chevron-left"></i> Retour au Dashboard
+        </button>
+    </div>
+
+    <div class="project-header" *ngIf="project">
+        <div class="header-left">
+            <div class="project-badge">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <div class="title-section">
+                <div class="breadcrumb">Mes Projets / Détails</div>
+                <h1>{{ project.name }}</h1>
+                <div class="meta-tags">
+                    <span class="meta-tag"><i class="far fa-calendar-alt"></i> Créé le {{ project.createdAt |
+                        date:'medium' }}</span>
+                    <span class="meta-tag"><i class="fas fa-microchip"></i> {{ project.language || 'Analyse en cours...'
+                        }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div [class]="'global-status-badge ' + project.status.toLowerCase()">
+                <span class="dot"></span> {{ project.status }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Visuelle de Pipeline -->
+    <div class="card timeline-card">
+        <div class="card-title">Flux de Déploiement</div>
+        <div class="pipeline-flow">
+            <div class="step" [attr.data-status]="getStepStatus('upload')">
+                <div class="step-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div class="step-label">Upload</div>
+                <div class="step-connector"></div>
+            </div>
+            <div class="step" [attr.data-status]="getStepStatus('dockerfile')">
+                <div class="step-icon"><i class="fab fa-docker"></i></div>
+                <div class="step-label">Dockerfile</div>
+                <div class="step-connector"></div>
+            </div>
+            <div class="step" [attr.data-status]="getStepStatus('pipeline')">
+                <div class="step-icon"><i class="fas fa-cogs"></i></div>
+                <div class="step-label">Pipeline</div>
+                <div class="step-connector"></div>
+            </div>
+            <div class="step" [attr.data-status]="getStepStatus('image')">
+                <div class="step-icon"><i class="fas fa-box"></i></div>
+                <div class="step-label">Image Image</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <!-- Colonne Gauche : Dockerfile et Image -->
+        <div class="left-column">
+            <div class="card dockerfile-card">
+                <div class="card-header-flex">
+                    <div class="card-title-sm"><i class="fas fa-file-code"></i> Dockerfile Généré</div>
+                    <div class="header-actions">
+                        <button class="btn-history" [class.active]="showHistory" (click)="toggleHistory()"
+                            title="Historique">
+                            <i class="fas fa-history"></i>
+                        </button>
+                        <button class="btn-copy-code" *ngIf="dockerfile" (click)="copyDockerfile()" title="Copier">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panneau Historique -->
+                <div class="history-panel" *ngIf="showHistory">
+                    <div class="history-header">
+                        <span>Versions Précédentes</span>
+                        <i class="fas fa-times" (click)="toggleHistory()"></i>
+                    </div>
+                    <div class="history-list scroll-custom">
+                        <div class="history-item" *ngFor="let version of dockerfileHistory; let i = index">
+                            <div class="version-info">
+                                <span class="version-date">{{ version.createdAt | date:'short' }}</span>
+                                <span class="version-tag" *ngIf="i === 0">Actuel</span>
+                            </div>
+                            <button class="btn-restore" (click)="restoreVersion(version)" *ngIf="i !== 0">
+                                <i class="fas fa-undo"></i> Restaurer
+                            </button>
+                        </div>
+                        <div class="empty-history" *ngIf="dockerfileHistory.length <= 1">
+                            Aucune version précédente disponible.
+                        </div>
+                    </div>
+                </div>
+                <div class="code-viewer">
+                    <div class="code-header">
+                        <span class="dot red"></span>
+                        <span class="dot orange"></span>
+                        <span class="dot green"></span>
+                        <span class="file-name">Dockerfile</span>
+                    </div>
+                    <div class="code-body scroll-custom">
+                        <pre *ngIf="dockerfile"><code>{{ dockerfile.content }}</code></pre>
+                        <div class="loading-code" *ngIf="!dockerfile">
+                            <i class="fas fa-circle-notch fa-spin"></i>
+                            Génération du Dockerfile...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card image-info-card" *ngIf="image">
+                <div class="card-title-sm"><i class="fas fa-layer-group"></i> Informations Image</div>
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="label">Nom de l'image</span>
+                        <span class="value">{{ image.imageName }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Tag de version</span>
+                        <span class="value badge-tag">{{ image.tag }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Registry URL</span>
+                        <div class="copy-box">
+                            <code>{{ image.registryUrl }}</code>
+                            <i class="far fa-clone"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne Droite : Logs Console -->
+        <div class="right-column">
+            <div class="card console-card">
+                <div class="console-header">
+                    <div class="console-title"><i class="fas fa-terminal"></i> Console de Sortie</div>
+                    <div class="console-actions">
+                        <span class="status-indicator">En direct</span>
+                    </div>
+                </div>
+                <div class="console-body scroll-custom">
+                    <div class="log-entry" *ngFor="let log of logs">
+                        <span class="log-text">{{ log }}</span>
+                    </div>
+                    <div class="console-cursor">_</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

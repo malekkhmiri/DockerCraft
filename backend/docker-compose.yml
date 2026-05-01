@@ -1,0 +1,205 @@
+services:
+  dc-db:
+    image: postgres:15
+    container_name: dc-postgres-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: DockerCraft
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d DockerCraft"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dc-network
+    volumes:
+      - dc_postgres_data:/var/lib/postgresql/data
+
+  dc-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: dc-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      - dc-network
+
+  dc-discovery:
+    build: ./discovery
+    container_name: dc-discovery
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_CLOUD_CONFIG_ENABLED=false
+      - EUREKA_INSTANCE_HOSTNAME=dc-discovery
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://dc-discovery:8761/eureka/
+    networks:
+      - dc-network
+
+  dc-config-server:
+    build: ./config-server
+    container_name: dc-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://dc-discovery:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_PROFILES_ACTIVE=native
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/app/config
+    depends_on:
+      - dc-discovery
+    volumes:
+      - ./Config_repo:/app/config
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - dc-network
+
+  dc-gateway:
+    build: ./gateway
+    container_name: dc-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_CONFIG_URI=http://dc-config-server:8888
+      - SPRING_CONFIG_IMPORT=configserver:http://dc-config-server:8888
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://dc-discovery:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - GATEWAY_INTERNAL_SECRET=${GATEWAY_INTERNAL_SECRET}
+      - SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://dc-discovery:8761/eureka/"}}}}
+    depends_on:
+      dc-config-server:
+        condition: service_healthy
+    networks:
+      - dc-network
+
+  dc-user-service:
+    build: ./user-service
+    container_name: dc-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_CONFIG_IMPORT=configserver:http://dc-config-server:8888
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://dc-discovery:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://dc-discovery:8761/eureka/"}}}}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dc-db:5432/DockerCraft
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_RABBITMQ_HOST=dc-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - SPRING_AI_OLLAMA_BASE_URL=http://dc-ollama:11434
+      - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
+      - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
+    depends_on:
+      dc-rabbitmq:
+        condition: service_started
+      dc-config-server:
+        condition: service_healthy
+      dc-ollama:
+        condition: service_started
+      dc-db:
+        condition: service_healthy
+    networks:
+      - dc-network
+
+  dc-project-service:
+    build: ./project-service
+    container_name: dc-project-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SERVER_PORT=8082
+      - SPRING_CLOUD_CONFIG_URI=http://dc-config-server:8888
+      - SPRING_CONFIG_IMPORT=configserver:http://dc-config-server:8888
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://dc-discovery:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://dc-discovery:8761/eureka/"}}}}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dc-db:5432/DockerCraft
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_RABBITMQ_HOST=dc-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+    restart: on-failure
+    depends_on:
+      dc-rabbitmq:
+        condition: service_started
+      dc-config-server:
+        condition: service_healthy
+      dc-db:
+        condition: service_healthy
+    networks:
+      - dc-network
+    volumes:
+      - dc_project_uploads:/app/uploads
+
+  dc-dockerfile-service:
+    build: ./dockerfile-service
+    container_name: dc-dockerfile-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVER_PORT=8083
+      - OLLAMA_MODEL=qwen2.5-coder:3b
+      - OLLAMA_URL=http://dc-ollama:11434
+      - SPRING_CLOUD_CONFIG_URI=http://dc-config-server:8888
+      - SPRING_CONFIG_IMPORT=configserver:http://dc-config-server:8888
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://dc-discovery:8761/eureka/
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - SPRING_APPLICATION_JSON={"eureka":{"client":{"serviceUrl":{"defaultZone":"http://dc-discovery:8761/eureka/"}}}}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dc-db:5432/DockerCraft
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_RABBITMQ_HOST=dc-rabbitmq
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+    restart: on-failure
+    depends_on:
+      dc-rabbitmq:
+        condition: service_started
+      dc-config-server:
+        condition: service_healthy
+      dc-db:
+        condition: service_healthy
+    networks:
+      - dc-network
+    volumes:
+      - dc_project_uploads:/app/uploads
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  dc-ollama:
+    image: ollama/ollama:latest
+    container_name: dc-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - dc_ollama_data:/root/.ollama
+    dns:
+      - 8.8.8.8
+    networks:
+      - dc-network
+
+networks:
+  dc-network:
+    driver: bridge
+
+volumes:
+  dc_ollama_data:
+  dc_postgres_data:
+  dc_project_uploads:

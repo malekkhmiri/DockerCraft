@@ -1,0 +1,128 @@
+<div class="app-shell" [ngClass]="isStudent() ? 'role-student' : 'role-pro'">
+  <app-user-sidebar></app-user-sidebar>
+
+  <div class="main-content">
+    <header class="dc-topbar">
+      <div class="topbar-left">
+        <h2 [ngClass]="isStudent() ? 'student-gradient-text' : 'pro-gradient-text'">
+          Dockerfile Editor
+        </h2>
+        <p>Review and customize your generated Dockerfile</p>
+      </div>
+      <div class="topbar-actions">
+        <a routerLink="/upload" class="btn btn-ghost btn-sm">
+          <i class="bi bi-arrow-left"></i> Back to Upload
+        </a>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loader-container">
+        <div class="spinner-border" role="status"></div>
+        <p>Loading your Dockerfile...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="!loading && errorMessage" class="alert-error animate-fade-up">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Success Toast -->
+      <div *ngIf="successMessage" class="toast-success animate-fade-up">
+        <i class="bi bi-check-circle-fill"></i>
+        {{ successMessage }}
+      </div>
+
+      <!-- Editor Content -->
+      <div *ngIf="!loading && dockerfile" class="editor-layout animate-fade-up">
+        
+        <!-- Code Card -->
+        <div class="glass-card editor-card">
+          <div class="card-header">
+            <div class="file-name">
+              <i class="bi bi-filetype-docker"></i>
+              <span>Dockerfile</span>
+              <span *ngIf="dockerfile.isReadOnly" class="readonly-label">
+                (read-only — upgrade to edit)
+              </span>
+            </div>
+            <div class="card-actions">
+              <button *ngIf="!isEditing && !dockerfile.isReadOnly" 
+                      (click)="toggleEdit()" 
+                      class="btn btn-ghost btn-sm">
+                <i class="bi bi-pencil-square"></i> Edit Dockerfile
+              </button>
+              <div *ngIf="isEditing" class="edit-actions">
+                <button (click)="toggleEdit()" class="btn btn-ghost btn-sm">Cancel</button>
+                <button (click)="saveDockerfile()" class="btn btn-primary btn-sm" [disabled]="saving">
+                  <i class="bi bi-save" *ngIf="!saving"></i>
+                  <div class="spinner-sm" *ngIf="saving"></div>
+                  {{ saving ? 'Saving...' : 'Save' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-body">
+            <!-- Read-only View -->
+            <pre *ngIf="!isEditing" class="dockerfile-code"><code>{{ dockerfile.content }}</code></pre>
+            
+            <!-- Editable View -->
+            <textarea *ngIf="isEditing" 
+                      [(ngModel)]="editedContent" 
+                      class="dockerfile-textarea"
+                      spellcheck="false">
+            </textarea>
+            
+            <!-- Char Counter -->
+            <div *ngIf="isEditing" class="char-counter">
+              {{ charCount }} characters
+            </div>
+          </div>
+        </div>
+
+        <!-- Downloads & Pro Features -->
+        <div class="sidebar-panel">
+          
+          <!-- Downloads -->
+          <div class="glass-card download-card">
+            <h3>Downloads</h3>
+            <div class="download-list">
+              <button (click)="downloadDockerfile()" class="btn btn-outline w-full" [disabled]="downloading">
+                <i class="bi bi-download" *ngIf="!downloading"></i>
+                <div class="spinner-sm" *ngIf="downloading"></div>
+                Download Dockerfile
+              </button>
+
+              <button (click)="downloadGitlabCi()" 
+                      class="btn btn-outline w-full" 
+                      [disabled]="!isPro() || downloadingGitlab"
+                      [title]="!isPro() ? 'CI/CD pipeline generation is a Pro feature. Upgrade to unlock.' : ''">
+                <i class="bi bi-gitlab" *ngIf="!downloadingGitlab"></i>
+                <i class="bi bi-lock-fill" *ngIf="!isPro()"></i>
+                <div class="spinner-sm" *ngIf="downloadingGitlab"></div>
+                Download .gitlab-ci.yml
+              </button>
+            </div>
+          </div>
+
+          <!-- Locked Pro Section -->
+          <div class="glass-card locked-card mt-4">
+            <div class="locked-header">
+              <i class="bi bi-lock-fill"></i>
+              <h3>CI/CD Pipeline & Docker Image</h3>
+            </div>
+            <p>Automatically trigger a GitLab CI/CD pipeline and store your Docker image in the registry.</p>
+            <button routerLink="/pricing" class="btn btn-pro btn-sm w-full mt-3">
+              Unlock with Pro →
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

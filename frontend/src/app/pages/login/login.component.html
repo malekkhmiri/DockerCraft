@@ -1,0 +1,111 @@
+<div class="auth-page">
+  <!-- Left Side: Branding/Visual -->
+  <div class="auth-visual">
+    <div class="visual-content">
+      <div class="logo-group mb-5">
+        <div class="logo-icon-auth">
+          <img src="logo.png" alt="DockerCraft" class="logo-image-auth">
+        </div>
+        <span class="logo-text">DockerCraft</span>
+      </div>
+      
+      <h1 class="visual-title">L'IA au service de votre <span class="gradient-text">déploiement.</span></h1>
+      <p class="visual-subtitle">Automatisez vos Dockerfiles et simplifiez votre CI/CD en quelques secondes.</p>
+      
+      <div class="visual-features mt-5">
+        <div class="feature-item">
+          <i class="bi bi-robot"></i>
+          <span>Génération Dockerfile par IA</span>
+        </div>
+        <div class="feature-item">
+          <i class="bi bi-shield-check"></i>
+          <span>Scan de vulnérabilités intégré</span>
+        </div>
+        <div class="feature-item">
+          <i class="bi bi-lightning-charge"></i>
+          <span>Pipeline CI/CD ultra-rapide</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Abstract background orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <!-- Right Side: Form -->
+  <div class="auth-form-container">
+    <div class="auth-form-card glass-card animate-fade-up">
+      <div class="form-header text-center">
+        <h2>Bon de vous revoir !</h2>
+        <p>Connectez-vous pour gérer vos projets Docker.</p>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert-error mb-4">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        {{ errorMessage }}
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <div class="input-wrap">
+            <i class="bi bi-envelope"></i>
+            <input type="email" 
+                   id="email"
+                   formControlName="email"
+                   class="form-input"
+                   placeholder="nom@exemple.com"
+                   [class.is-invalid]="submitted && f['email'].errors">
+          </div>
+          <div *ngIf="submitted && f['email'].errors" class="form-error">
+            <span *ngIf="f['email'].errors['required']">L'email est requis</span>
+            <span *ngIf="f['email'].errors['email']">Email invalide</span>
+            <span *ngIf="f['email'].errors['forbiddenDomain']">Domaine interdit</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label class="form-label" for="password">Mot de passe</label>
+            <a routerLink="/forgot-password" class="forgot-link">Oublié ?</a>
+          </div>
+          <div class="input-wrap">
+            <i class="bi bi-lock"></i>
+            <input type="password" 
+                   id="password"
+                   formControlName="password"
+                   class="form-input"
+                   placeholder="••••••••"
+                   [class.is-invalid]="submitted && f['password'].errors">
+          </div>
+          <div *ngIf="submitted && f['password'].errors" class="form-error">
+            <span *ngIf="f['password'].errors['required']">Le mot de passe est requis</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full py-3 mt-2" [disabled]="loading">
+          <span *ngIf="!loading">Se connecter</span>
+          <div *ngIf="loading" class="spinner-sm"></div>
+        </button>
+
+        <div class="form-divider">
+          <span>Ou continuer avec</span>
+        </div>
+
+        <div class="social-actions">
+          <button type="button" class="btn btn-ghost social-btn" (click)="loginWithGoogle()">
+            <i class="bi bi-google"></i> Google
+          </button>
+          <button type="button" class="btn btn-ghost social-btn" (click)="loginWithGithub()">
+            <i class="bi bi-github"></i> GitHub
+          </button>
+        </div>
+
+        <p class="auth-footer-text">
+          Vous n'avez pas de compte ? <a routerLink="/signup" class="gradient-text-orange">S'inscrire gratuitement</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>

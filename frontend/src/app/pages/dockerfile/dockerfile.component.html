@@ -1,0 +1,195 @@
+<div class="app-shell role-pro">
+  <app-user-sidebar></app-user-sidebar>
+
+  <div class="main-content">
+    <header class="dc-topbar">
+      <div class="topbar-left">
+        <h2 class="pro-gradient-text">Configuration Dockerfile</h2>
+        <p>Gérez et personnalisez la configuration Docker de votre projet.</p>
+        
+        <!-- Project Selector -->
+        <div class="project-selector-wrap mt-2" *ngIf="userProjects.length > 0">
+          <i class="bi bi-folder2-open me-2 text-muted"></i>
+          <select class="project-select" [value]="projectId" (change)="onProjectChange($event)">
+             <option *ngFor="let p of userProjects" [value]="p.id">{{ p.name }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="badge-group">
+          <span class="badge badge-green">
+            <i class="bi bi-shield-check"></i> Enterprise Ready
+          </span>
+          <span class="badge badge-pro" *ngIf="isEditing">
+            <i class="bi bi-pencil-square"></i> Editing Mode
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div *ngIf="loading" class="loader-container animate-fade-up">
+        <div class="loader-ring pro"></div>
+        <p>Génération du Dockerfile par l'IA...</p>
+      </div>
+
+      <div *ngIf="!loading && !dockerfile" class="empty-state animate-fade-up">
+        <div class="glass-card p-5 text-center">
+          <i class="bi bi-file-earmark-x" style="font-size: 3.5rem; color: var(--text-500); display: block; margin-bottom: 1.5rem;"></i>
+          <h3>Oups ! Aucun Dockerfile trouvé.</h3>
+          <p class="mb-4">Il semblerait qu'aucun Dockerfile n'ait encore été généré pour ce projet.</p>
+          <a routerLink="/upload" class="btn btn-pro">
+            <i class="bi bi-cloud-upload"></i> Uploader un projet
+          </a>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && dockerfile" class="dockerfile-layout animate-fade-up">
+        <!-- Editor Card -->
+        <div class="glass-card editor-card">
+          <div class="card-header-row p-3">
+            <div class="file-info">
+              <i class="bi bi-filetype-docker text-orange"></i>
+              <span class="filename">Dockerfile</span>
+              <span class="stats-mini" *ngIf="!isEditing">
+                {{ dockerfile.content.split('\n').length }} lignes · {{ (dockerfile.content.length / 1024).toFixed(2) }} KB
+              </span>
+            </div>
+            <div class="editor-actions">
+              <button class="btn btn-ghost btn-icon btn-sm" (click)="copyToClipboard()" data-tooltip="Copier le code">
+                <i class="bi bi-clipboard"></i>
+              </button>
+              <button class="btn btn-ghost btn-icon btn-sm" (click)="downloadDockerfile()" data-tooltip="Télécharger">
+                <i class="bi bi-download"></i>
+              </button>
+              
+              <button class="btn btn-ghost btn-sm" (click)="onRegenerate()" [disabled]="regenerating" data-tooltip="Régénérer avec l'IA">
+                <i class="bi bi-stars" [ngClass]="{'animate-spin': regenerating}"></i> 
+                {{ regenerating ? 'Génération...' : 'Régénérer' }}
+              </button>
+
+              <div class="divider-v"></div>
+              
+              <ng-container>
+                <button *ngIf="!isEditing" class="btn btn-ghost btn-sm" (click)="toggleEdit()">
+                  <i class="bi bi-pencil"></i> Modifier
+                </button>
+                <div class="btn-group" *ngIf="isEditing">
+                  <button class="btn btn-ghost btn-sm" (click)="toggleEdit()">Annuler</button>
+                  
+                  <input type="file" #fileInput (change)="importLocalDockerfile($event)" accept="*" style="display:none">
+                  <button class="btn btn-ghost btn-sm" (click)="fileInput.click()">
+                    <i class="bi bi-box-arrow-in-up"></i> Importer local
+                  </button>
+
+                  <button class="btn btn-pro btn-sm" (click)="saveDockerfile()">
+                    <i class="bi bi-check-lg"></i> Enregistrer
+                  </button>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <div class="editor-body">
+            <div class="line-numbers">
+              <span *ngFor="let line of (isEditing ? editedContent : dockerfile.content).split('\n'); let i = index">
+                {{ i + 1 }}
+              </span>
+            </div>
+            
+            <pre *ngIf="!isEditing" class="code-view"><code>{{ dockerfile.content }}</code></pre>
+            
+            <textarea *ngIf="isEditing" 
+                      class="code-textarea" 
+                      [(ngModel)]="editedContent" 
+                      spellcheck="false">
+            </textarea>
+          </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="sidebar-info-panel">
+          <div class="glass-card p-3 mb-3">
+            <h4 class="section-title role-pro">
+              Informations Projet
+            </h4>
+            <div class="info-list">
+              <div class="info-item">
+                <span class="label">Projet :</span>
+                <span class="val">{{ projectId || 'N/A' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Généré le :</span>
+                <span class="val">{{ today | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Statut :</span>
+                <span class="val">PRO ACTIF</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comprendre ce Dockerfile -->
+          <div class="glass-card p-3">
+            <h4 class="section-title role-pro">
+              Explications Docker
+            </h4>
+            <div class="learning-tips">
+              <div class="tip">
+                <i class="bi bi-info-circle text-info"></i>
+                <p><strong>FROM :</strong> Définit l'image de base (le système d'exploitation et les outils).</p>
+              </div>
+              <div class="tip">
+                <i class="bi bi-info-circle text-info"></i>
+                <p><strong>WORKDIR :</strong> Définit le dossier où s'exécuteront les commandes suivantes.</p>
+              </div>
+              <div class="tip">
+                <i class="bi bi-info-circle text-info"></i>
+                <p><strong>COPY :</strong> Copie vos fichiers locaux dans l'image Docker.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Push GitLab — UNIFIED -->
+          <div class="glass-card p-3">
+            <h4 class="section-title role-pro">
+              <i class="bi bi-gitlab"></i> Push vers GitLab
+            </h4>
+            <p style="font-size:0.8rem;color:var(--text-400);margin-bottom:1rem;">
+              Envoyez automatiquement ce Dockerfile vers votre dépôt GitLab et déclenchez un pipeline CI/CD.
+            </p>
+            <button class="btn btn-pro btn-sm w-full">
+              <i class="bi bi-gitlab"></i> Push & Déclencher Pipeline
+            </button>
+          </div>
+
+          <div class="glass-card p-3">
+            <h4 class="section-title role-pro">
+              Optimization Pro
+            </h4>
+            <div class="pro-tips">
+              <div class="stat-mini-row">
+                <i class="bi bi-shield-check text-success"></i>
+                <span>Scan de sécurité passé</span>
+              </div>
+              <div class="stat-mini-row">
+                <i class="bi bi-lightning text-warning"></i>
+                <span>Multi-stage build actif</span>
+              </div>
+              <button class="btn btn-ghost w-full mt-3 btn-sm">
+                <i class="bi bi-layout-text-sidebar-reverse"></i> Utiliser un template
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" *ngIf="showToast">
+    <div class="toast-msg glass-card">
+      <i class="bi bi-check-circle-fill text-success"></i>
+      {{ toastMessage }}
+    </div>
+  </div>
+</div>

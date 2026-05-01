@@ -1,0 +1,127 @@
+/* Reuse most logic from login.component.css */
+@import url("../login/login.component.css");
+
+/* ── Specific Signup Styles ── */
+
+.auth-form-card {
+  max-width: 500px; /* Un peu plus large pour les deux colonnes si besoin */
+}
+
+.stats-mini-grid {
+  display: flex;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.s-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.s-lab {
+  font-size: 0.72rem;
+  color: var(--text-500);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Role Switcher ── */
+.role-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.role-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.role-option.active {
+  border-color: var(--brand-orange);
+  background: rgba(255, 107, 0, 0.05);
+}
+
+.role-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--glass-border);
+  border-radius: 50%;
+  padding: 3px;
+  background-clip: content-box;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.role-option.active .role-radio {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+  box-shadow: 0 0 8px var(--brand-orange-glow);
+}
+
+.role-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-200);
+}
+
+.role-desc {
+  font-size: 0.72rem;
+  color: var(--text-500);
+}
+
+.role-icon-sm {
+  font-size: 1.25rem;
+  opacity: 0.7;
+}
+
+/* Form Row */
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (max-width: 576px) {
+  .form-row {
+     flex-direction: column;
+     gap: 0;
+  }
+}
+
+.form-check-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-400);
+}
+
+.form-check-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand-orange);
+}

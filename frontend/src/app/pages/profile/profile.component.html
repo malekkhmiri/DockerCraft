@@ -1,0 +1,222 @@
+<div class="app-shell" [ngClass]="isStudent() ? 'role-student' : 'role-pro'">
+  <app-user-sidebar></app-user-sidebar>
+
+  <div class="main-content">
+    <header class="dc-topbar">
+      <div class="topbar-left">
+        <h2 [ngClass]="isStudent() ? 'student-gradient-text' : 'pro-gradient-text'">
+          Mon Profil
+        </h2>
+        <p>Gérez vos informations personnelles et vos préférences de sécurité.</p>
+      </div>
+      <div class="topbar-actions">
+        <span class="badge" [ngClass]="isStudent() ? 'badge-blue' : 'badge-green'">
+          <i class="bi" [ngClass]="isStudent() ? 'bi-mortarboard' : 'bi-briefcase'"></i>
+          {{ isStudent() ? 'Étudiant' : 'Professionnel' }}
+        </span>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="profile-layout grid-layout animate-fade-up">
+
+        <!-- Column 1: Info & Stats -->
+        <div class="profile-column">
+          <div class="glass-card profile-card text-center p-5">
+            <div class="avatar-wrapper">
+              <div class="user-avatar" [ngClass]="isStudent() ? 'student' : 'pro'">
+                {{ (username?.substring(0, 1) || 'U') | uppercase }}
+              </div>
+              <div class="edit-badge">
+                <i class="bi bi-camera"></i>
+              </div>
+            </div>
+            
+            <h3 class="mt-3 mb-1">{{ username }}</h3>
+            <p class="email-text">{{ email }}</p>
+            
+            <div class="profile-badges mt-3">
+              <span class="p-badge" [ngClass]="isStudent() ? 'student' : 'pro'">
+                <i class="bi bi-patch-check-fill"></i> Compte Vérifié
+              </span>
+            </div>
+
+            <div class="quick-stats-row mt-4 pt-4">
+              <div class="q-stat">
+                <span class="q-val">12</span>
+                <span class="q-lab">Projets</span>
+              </div>
+              <div class="q-divider"></div>
+              <div class="q-stat">
+                <span class="q-val">04</span>
+                <span class="q-lab">Images</span>
+              </div>
+              <div class="q-divider"></div>
+              <div class="q-stat">
+                <span class="q-val">9.5 MB</span>
+                <span class="q-lab">Espace</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preferences Card -->
+          <div class="glass-card mt-4 p-4">
+            <h4 class="section-title" [ngClass]="isStudent() ? 'role-student' : 'role-pro'">
+              Préférences d'Affichage
+            </h4>
+            
+            <div class="setting-item mt-3">
+              <div class="setting-info">
+                <span class="setting-name">Mode Thème</span>
+                <span class="setting-desc">Alterner entre mode sombre et clair.</span>
+              </div>
+              <div class="theme-switch-control" (click)="toggleTheme()">
+                <div class="switch-ball" [class.dark]="themeService.getCurrentTheme() === 'dark'">
+                  <i class="bi" [ngClass]="themeService.getCurrentTheme() === 'dark' ? 'bi-moon-stars-fill' : 'bi-sun-fill'"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">Notifications Email</span>
+                <span class="setting-desc">Alertes de build et pipeline.</span>
+              </div>
+              <div class="dc-checkbox active"></div>
+            </div>
+          </div>
+
+          <!-- Subscription Details Card -->
+          <div class="glass-card mt-4 p-4 animate-fade-up">
+            <h4 class="section-title" [ngClass]="isStudent() ? 'role-student' : 'role-pro'">
+              Détails de l'Abonnement
+            </h4>
+            
+            <div class="plan-status-box mt-3" [ngClass]="userProfile?.planType?.toLowerCase()">
+              <div class="plan-icon-wrap">
+                <i class="bi" [ngClass]="userProfile?.planType === 'PRO' ? 'bi-star-fill' : 'bi-mortarboard-fill'"></i>
+              </div>
+              <div class="plan-info">
+                <span class="plan-name">{{ getPlanLabel() }}</span>
+                <span class="plan-status">Status: {{ userProfile?.subscriptionStatus }}</span>
+              </div>
+            </div>
+
+            <div class="quota-list mt-4">
+              <!-- Dockerfiles -->
+              <div class="quota-row">
+                <div class="quota-info-text">
+                  <span class="q-label">Générations Dockerfile</span>
+                  <span class="q-val">{{ userProfile?.dockerfileGenerationsCount }} / {{ userProfile?.dockerfileLimit === -1 ? '∞' : userProfile?.dockerfileLimit }}</span>
+                </div>
+                <div class="q-progress-bar">
+                  <div class="q-progress-fill" 
+                       [style.width]="(userProfile?.dockerfileLimit === -1 ? 0 : (userProfile?.dockerfileGenerationsCount / userProfile?.dockerfileLimit * 100)) + '%'"></div>
+                </div>
+              </div>
+
+              <!-- Deployments -->
+              <div class="quota-row mt-3" *ngIf="userProfile?.planType !== 'STUDENT_FREE'">
+                <div class="quota-info-text">
+                  <span class="q-label">Déploiements Pipeline</span>
+                  <span class="q-val">{{ userProfile?.deploymentsCount }} / {{ userProfile?.deploymentLimit === -1 ? '∞' : userProfile?.deploymentLimit }}</span>
+                </div>
+                <div class="q-progress-bar">
+                  <div class="q-progress-fill blue" 
+                       [style.width]="(userProfile?.deploymentLimit === -1 ? 0 : (userProfile?.deploymentsCount / userProfile?.deploymentLimit * 100)) + '%'"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="subscription-actions mt-4 pt-3 border-top">
+              <button *ngIf="userProfile?.planType === 'STUDENT_FREE'" class="btn btn-student w-full">
+                <i class="bi bi-lightning-fill"></i> Passer au Premium (29DT/mois)
+              </button>
+              <button *ngIf="userProfile?.planType !== 'STUDENT_FREE'" class="btn btn-ghost w-full btn-sm">
+                Annuler mon abonnement
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Security & Actions -->
+        <div class="profile-column">
+          <div class="glass-card p-4">
+            <h4 class="section-title" [ngClass]="isStudent() ? 'role-student' : 'role-pro'">
+              Sécurité du Compte
+            </h4>
+            
+            <form (ngSubmit)="onChangePassword()" class="mt-4">
+              <div class="form-group mb-3">
+                <label class="form-label" for="currentPassword">Mot de passe actuel</label>
+                <div class="input-wrap">
+                  <i class="bi bi-lock"></i>
+                  <input type="password" id="currentPassword" 
+                         [(ngModel)]="passwordData.currentPassword" name="currentPassword" 
+                         class="form-input" placeholder="••••••••" required>
+                </div>
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label" for="newPassword">Nouveau mot de passe</label>
+                <div class="input-wrap">
+                  <i class="bi bi-shield-lock"></i>
+                  <input type="password" id="newPassword" 
+                         [(ngModel)]="passwordData.newPassword" name="newPassword" 
+                         class="form-input" placeholder="••••••••" required>
+                </div>
+              </div>
+
+              <div class="form-group mb-4">
+                <label class="form-label" for="confirmPassword">Confirmer le nouveau mot de passe</label>
+                <div class="input-wrap">
+                  <i class="bi bi-shield-check"></i>
+                  <input type="password" id="confirmPassword" 
+                         [(ngModel)]="passwordData.confirmPassword" name="confirmPassword" 
+                         class="form-input" placeholder="••••••••" required>
+                </div>
+              </div>
+
+              <div *ngIf="successMsg" class="alert-success-box mb-3 animate-fade-in">
+                <i class="bi bi-check-circle-fill"></i> {{ successMsg }}
+              </div>
+              <div *ngIf="errorMsg" class="alert-error mb-3 animate-fade-in">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ errorMsg }}
+              </div>
+
+              <button type="submit" class="btn w-full py-3" [ngClass]="isStudent() ? 'btn-student' : 'btn-pro'">
+                <i class="bi bi-key"></i> Mettre à jour le mot de passe
+              </button>
+            </form>
+          </div>
+
+          <!-- Sessions/Logins (Extra UI) -->
+          <div class="glass-card mt-4 p-4">
+            <h4 class="section-title mb-3" [ngClass]="isStudent() ? 'role-student' : 'role-pro'">
+              Sessions Actives
+            </h4>
+            <div class="session-item active">
+               <div class="session-icon"><i class="bi bi-display"></i></div>
+               <div class="session-info">
+                  <span class="browser">Chrome sur Windows 11</span>
+                  <span class="location">Actuel · Tunisie (Tunis)</span>
+               </div>
+               <span class="active-dot"></span>
+            </div>
+            <button class="btn btn-ghost w-full btn-sm mt-3 text-error">
+              <i class="bi bi-box-arrow-right"></i> Déconnexion de tous les appareils
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" *ngIf="showToast">
+    <div class="toast-msg glass-card">
+      <i class="bi bi-check-circle-fill text-success"></i>
+      {{ toastMessage }}
+    </div>
+  </div>
+</div>

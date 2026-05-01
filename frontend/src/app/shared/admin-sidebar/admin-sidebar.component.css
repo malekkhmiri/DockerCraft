@@ -1,0 +1,11 @@
+/* Admin sidebar uses global dc-sidebar & role-admin styles from styles.css */
+/* Component-level overrides only below */
+
+.dc-sidebar {
+  /* Override nav-item hover for admin orange accent — already in role-admin global */
+}
+
+/* Ensure sidebar fills viewport */
+:host {
+  display: contents;
+}

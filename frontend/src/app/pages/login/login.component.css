@@ -1,0 +1,261 @@
+/* Auth Page Base Layout */
+
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+  background: #0B1F3A;
+  color: #f1f5f9;
+}
+
+@media (max-width: 992px) {
+  .auth-page {
+    flex-direction: column;
+  }
+}
+
+/* ── Visual Section ── */
+.auth-visual {
+  flex: 1.2;
+  background: linear-gradient(135deg, #0B1F3A 0%, #071324 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 992px) {
+  .auth-visual {
+    display: none;
+  }
+}
+
+.visual-content {
+  max-width: 500px;
+  z-index: 10;
+}
+
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--brand-orange);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px var(--brand-orange-glow);
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.visual-title {
+  font-size: 2.8rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  letter-spacing: -1px;
+}
+
+.visual-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-400);
+  line-height: 1.6;
+}
+
+.visual-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1rem;
+  color: var(--text-200);
+}
+
+.feature-item i {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 107, 0, 0.1);
+  color: var(--brand-orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.2;
+  z-index: 1;
+}
+
+.orb-1 { width: 400px; height: 400px; background: var(--brand-orange); bottom: -100px; left: -100px; }
+.orb-2 { width: 300px; height: 300px; background: #4F8CFF; top: -50px; right: -50px; opacity: 0.1; }
+
+/* ── Form Section ── */
+.auth-form-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #071324;
+}
+
+.auth-form-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 3rem;
+  border-radius: 20px;
+}
+
+@media (max-width: 576px) {
+  .auth-form-card {
+    padding: 2rem 1.5rem;
+  }
+}
+
+.form-header h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.form-header p {
+  font-size: 0.88rem;
+  color: var(--text-400);
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.forgot-link {
+  font-size: 0.78rem;
+  color: var(--brand-orange);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-wrap i {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-500);
+  font-size: 1rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.8rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: var(--text-100);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--brand-orange);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.form-input.is-invalid {
+  border-color: #F87171;
+}
+
+.form-error {
+  font-size: 0.78rem;
+  color: #F87171;
+  margin-top: 0.4rem;
+}
+
+.form-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  font-size: 0.75rem;
+  color: var(--text-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-divider::before, .form-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--glass-border);
+}
+
+.form-divider span {
+  padding: 0 1rem;
+}
+
+.social-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.social-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.social-btn i { font-size: 1.1rem; }
+
+.auth-footer-text {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-400);
+}
+
+.auth-footer-text a {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.gradient-text-orange {
+  background: linear-gradient(135deg, var(--brand-orange) 0%, #FF9E5C 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

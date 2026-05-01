@@ -1,0 +1,43 @@
+server:
+  port: 9014
+ 
+spring:
+  application:
+    name: user-service
+  main:
+    allow-bean-definition-overriding: true
+  amqp:
+    deserialization:
+      trust:
+        all: true
+  datasource:
+    url: jdbc:postgresql://db:5432/pipeline_automation
+    username: pfe
+    password: pfe
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    generate-ddl: true
+    properties:
+      hibernate:
+        format_sql: true
+        # On désactive le dialecte forcé pour que Hibernate 6 auto-détecte Postgres 15+
+        # dialect: org.hibernate.dialect.PostgreSQLDialect
+        highlight_sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+            protocols: TLSv1.2

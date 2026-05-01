@@ -1,0 +1,299 @@
+<!-- ════════════════════════════════════════════════════
+     DOCKERCRAFT — LANDING PAGE
+     ════════════════════════════════════════════════════ -->
+<div class="home-root">
+
+  <!-- ── NAVBAR ── -->
+  <nav class="home-nav">
+    <div class="home-nav-inner">
+      <a routerLink="/" class="home-nav-logo">
+        <div class="home-logo-icon">
+          <img src="logo.png" alt="DockerCraft" class="home-logo-img">
+        </div>
+        <span class="home-logo-text">DockerCraft</span>
+      </a>
+
+      <div class="home-nav-links">
+        <a href="#features" class="home-nav-link">Fonctionnalités</a>
+        <a href="#roles" class="home-nav-link">Modes</a>
+        <a href="#workflow" class="home-nav-link">Workflow</a>
+      </div>
+
+      <div class="home-nav-actions" *ngIf="!isLoggedIn">
+        <a routerLink="/login" class="btn btn-ghost btn-sm">Connexion</a>
+        <a routerLink="/signup" class="btn btn-primary btn-sm">
+          Commencer <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="home-nav-actions" *ngIf="isLoggedIn">
+        <span class="nav-welcome">Bonjour, <strong>{{ username }}</strong></span>
+        <a routerLink="/dashboard" class="btn btn-primary btn-sm">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <button (click)="onLogout()" class="btn btn-ghost btn-sm">Déconnexion</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero-section">
+    <div class="hero-bg-orbs">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge animate-scale-in">
+        <i class="bi bi-stars"></i>
+        Powered by AI · CI/CD Automation
+      </div>
+
+      <h1 class="hero-title animate-fade-up">
+        Deployez avec<br><span class="gradient-text">l'Intelligence</span><br>Artificielle
+      </h1>
+
+      <p class="hero-subtitle animate-fade-up" style="animation-delay: 0.1s">
+        DockerCraft analyse votre code, génère vos Dockerfiles et automatise<br>
+        vos pipelines CI/CD en quelques secondes. DevOps simplifié.
+      </p>
+
+      <div class="hero-actions animate-fade-up" style="animation-delay: 0.2s">
+        <a routerLink="/signup" class="btn btn-primary btn-lg">
+          <i class="bi bi-rocket-takeoff-fill"></i>
+          Commencer gratuitement
+        </a>
+        <a routerLink="/login" class="btn btn-ghost btn-lg">
+          Découvrir la plateforme
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- Metrics row -->
+      <div class="hero-metrics animate-fade-up" style="animation-delay: 0.3s">
+        <div class="metric-item">
+          <span class="metric-val gradient-text">2.4s</span>
+          <span class="metric-label">Génération Dockerfile</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+          <span class="metric-val gradient-text">99.9%</span>
+          <span class="metric-label">Taux de disponibilité</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+          <span class="metric-val gradient-text">100%</span>
+          <span class="metric-label">Automatisé par IA</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terminal mockup -->
+    <div class="hero-visual animate-scale-in" style="animation-delay: 0.2s">
+      <div class="terminal-mockup">
+        <div class="terminal-bar">
+          <div class="t-dots">
+            <span class="t-red"></span>
+            <span class="t-yellow"></span>
+            <span class="t-green"></span>
+          </div>
+          <span class="t-title">dockerfile.generate</span>
+          <span class="badge badge-green badge-pulse">LIVE</span>
+        </div>
+        <div class="terminal-body">
+          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockercraft analyze ./my-spring-app.zip</span></div>
+          <div class="t-line t-info">→ Detected: <span class="text-orange">Java / Spring Boot</span></div>
+          <div class="t-line t-info">→ Dependencies: <span class="text-info">Maven, JDK 17</span></div>
+          <div class="t-line t-info">→ Port inferred: <span class="text-success">8080</span></div>
+          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockercraft generate --ai</span></div>
+          <div class="t-line t-success">✓ Dockerfile generated in 2.4s</div>
+          <div class="t-line t-dimmed">FROM eclipse-temurin:17-jdk-alpine</div>
+          <div class="t-line t-dimmed">WORKDIR /app</div>
+          <div class="t-line t-dimmed">COPY target/*.jar app.jar</div>
+          <div class="t-line t-dimmed">EXPOSE 8080</div>
+          <div class="t-line t-dimmed">ENTRYPOINT ["java","-jar","app.jar"]</div>
+          <div class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> dockercraft pipeline run</span></div>
+          <div class="t-line t-running">
+            <span class="t-spinner"></span>
+            CI/CD pipeline starting...
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ROLES SECTION ── -->
+  <section class="roles-section" id="roles">
+    <div class="section-container">
+      <div class="section-header-center">
+        <span class="section-eyebrow">Deux modes, une plateforme</span>
+        <h2>Adapté à votre profil</h2>
+        <p>Que vous soyez étudiant en apprentissage ou développeur professionnel, DockerCraft s'adapte.</p>
+      </div>
+
+      <div class="roles-grid">
+        <!-- Student -->
+        <div class="role-card student-card animate-fade-up">
+          <div class="role-card-header">
+            <div class="role-icon student-icon">
+              <i class="bi bi-mortarboard-fill"></i>
+            </div>
+            <div class="role-badge badge badge-blue">Étudiant</div>
+          </div>
+          <h3>Mode Apprentissage</h3>
+          <p>Interface guidée et pédagogique. Concentrez-vous sur votre code, l'IA s'occupe du reste.</p>
+          <ul class="role-features">
+            <li><i class="bi bi-check-circle-fill text-info"></i> Upload de projet ZIP</li>
+            <li><i class="bi bi-check-circle-fill text-info"></i> Dockerfile auto-généré par IA</li>
+            <li><i class="bi bi-check-circle-fill text-info"></i> Visualisation pipeline CI/CD</li>
+            <li><i class="bi bi-check-circle-fill text-info"></i> Mode lecture seule sécurisé</li>
+            <li><i class="bi bi-check-circle-fill text-info"></i> Tooltips pédagogiques</li>
+            <li><i class="bi bi-x-circle-fill text-danger"></i> Modification du Dockerfile</li>
+          </ul>
+          <div class="role-cta">
+            <a routerLink="/signup" class="btn btn-student w-full">
+              <i class="bi bi-mortarboard"></i> Rejoindre en mode Étudiant
+            </a>
+          </div>
+        </div>
+
+        <!-- Pro -->
+        <div class="role-card pro-card animate-fade-up" style="animation-delay: 0.1s">
+          <div class="role-card-header">
+            <div class="role-icon pro-icon">
+              <i class="bi bi-briefcase-fill"></i>
+            </div>
+            <div class="role-badge badge badge-green">Professionnel</div>
+          </div>
+          <h3>Mode Expert</h3>
+          <p>Contrôle total sur votre infrastructure Docker. Multi-projets, GitLab, monitoring avancé.</p>
+          <ul class="role-features">
+            <li><i class="bi bi-check-circle-fill text-success"></i> Tout le mode Étudiant</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Dockerfile éditable</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Templates Dockerfile</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Intégration GitLab</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Monitoring temps réel</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Registry Docker & RBAC</li>
+          </ul>
+          <div class="role-cta">
+            <a routerLink="/signup" class="btn btn-pro w-full">
+              <i class="bi bi-briefcase"></i> Rejoindre en mode Pro
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ── -->
+  <section class="features-section" id="features">
+    <div class="section-container">
+      <div class="section-header-center">
+        <span class="section-eyebrow">Fonctionnalités</span>
+        <h2>Tout ce dont vous avez besoin</h2>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card glass-card animate-fade-up">
+          <div class="feature-icon" style="background: var(--brand-orange-subtle); color: var(--brand-orange);">
+            <i class="bi bi-robot"></i>
+          </div>
+          <h3>IA Générative</h3>
+          <p>Notre moteur IA scanne votre projet, détecte les dépendances et génère un Dockerfile optimisé en 2 secondes.</p>
+        </div>
+        <div class="feature-card glass-card animate-fade-up" style="animation-delay:0.05s">
+          <div class="feature-icon" style="background: var(--student-subtle); color: var(--student-primary);">
+            <i class="bi bi-diagram-3-fill"></i>
+          </div>
+          <h3>CI/CD Automatisé</h3>
+          <p>Intégration GitLab transparente : chaque push déclenche un build, scan de sécurité et déploiement.</p>
+        </div>
+        <div class="feature-card glass-card animate-fade-up" style="animation-delay:0.1s">
+          <div class="feature-icon" style="background: var(--pro-subtle); color: var(--pro-primary);">
+            <i class="bi bi-shield-lock-fill"></i>
+          </div>
+          <h3>Sécurité intégrée</h3>
+          <p>Vérification d'identité, isolation des conteneurs et scan des vulnérabilités pour une plateforme sûre.</p>
+        </div>
+        <div class="feature-card glass-card animate-fade-up" style="animation-delay:0.15s">
+          <div class="feature-icon" style="background: var(--brand-orange-subtle); color: var(--brand-orange);">
+            <i class="bi bi-activity"></i>
+          </div>
+          <h3>Monitoring Temps Réel</h3>
+          <p>Suivez vos pipelines en temps réel avec WebSocket. Logs, métriques et alertes instantanées.</p>
+        </div>
+        <div class="feature-card glass-card animate-fade-up" style="animation-delay:0.2s">
+          <div class="feature-icon" style="background: var(--student-subtle); color: var(--student-primary);">
+            <i class="bi bi-box-seam-fill"></i>
+          </div>
+          <h3>Registry Docker</h3>
+          <p>Stockez et gérez vos images Docker dans un registry intégré avec versioning automatique.</p>
+        </div>
+        <div class="feature-card glass-card animate-fade-up" style="animation-delay:0.25s">
+          <div class="feature-icon" style="background: var(--pro-subtle); color: var(--pro-primary);">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <h3>Multi-Rôles (RBAC)</h3>
+          <p>Gestion fine des permissions : Étudiant, Professionnel et Administrateur avec vues dédiées.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WORKFLOW ── -->
+  <section class="workflow-section" id="workflow">
+    <div class="section-container">
+      <div class="section-header-center">
+        <span class="section-eyebrow">Comment ça marche</span>
+        <h2>En 3 étapes simples</h2>
+      </div>
+
+      <div class="workflow-steps">
+        <div class="workflow-step animate-fade-up">
+          <div class="ws-num gradient-text">01</div>
+          <div class="ws-icon" style="color: var(--brand-orange)"><i class="bi bi-cloud-upload-fill"></i></div>
+          <h3>Uploadez</h3>
+          <p>Glissez votre archive ZIP. L'IA détecte automatiquement votre stack technologique.</p>
+        </div>
+        <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="workflow-step animate-fade-up" style="animation-delay: 0.1s">
+          <div class="ws-num student-gradient-text">02</div>
+          <div class="ws-icon" style="color: var(--student-primary)"><i class="bi bi-cpu-fill"></i></div>
+          <h3>Générez</h3>
+          <p>L'IA génère un Dockerfile optimisé en 2 secondes avec les meilleures pratiques Docker.</p>
+        </div>
+        <div class="workflow-arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="workflow-step animate-fade-up" style="animation-delay: 0.2s">
+          <div class="ws-num pro-gradient-text">03</div>
+          <div class="ws-icon" style="color: var(--pro-primary)"><i class="bi bi-rocket-takeoff-fill"></i></div>
+          <h3>Déployez</h3>
+          <p>Le pipeline CI/CD se lance automatiquement. Build, test, scan et push vers le registry.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA FOOTER ── -->
+  <footer class="home-footer">
+    <div class="footer-cta-box glass-card">
+      <h2 class="gradient-text">Prêt à automatiser votre DevOps ?</h2>
+      <p>Rejoignez DockerCraft et transformez votre workflow en quelques minutes.</p>
+      <div class="footer-cta-actions">
+        <a routerLink="/signup" class="btn btn-primary btn-lg">
+          <i class="bi bi-rocket-takeoff-fill"></i> Créer mon compte
+        </a>
+        <a routerLink="/login" class="btn btn-ghost btn-lg">J'ai déjà un compte</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 DockerCraft. Tous droits réservés.</p>
+      <div class="footer-tech-badges">
+        <span class="badge badge-orange">Angular 19</span>
+        <span class="badge badge-blue">Spring Boot</span>
+        <span class="badge badge-green">AI-Powered</span>
+      </div>
+    </div>
+  </footer>
+
+</div>

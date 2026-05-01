@@ -1,0 +1,69 @@
+<div class="app-shell" [ngClass]="isStudent() ? 'role-student' : 'role-pro'">
+  <app-user-sidebar></app-user-sidebar>
+
+  <div class="main-content">
+    <header class="dc-topbar">
+      <div class="topbar-left">
+        <h2 [ngClass]="isStudent() ? 'student-gradient-text' : 'pro-gradient-text'">
+          Upload Project
+        </h2>
+        <p>Choose a ZIP file to generate your Dockerfile</p>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="upload-container glass-card animate-fade-up">
+        
+
+        <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()" class="upload-form">
+          <!-- Drop Zone -->
+          <div class="drop-zone"
+               [class.dragging]="isDragging"
+               (click)="fileInput.click()">
+            
+            <input type="file" #fileInput (change)="onFileSelected($event)" 
+                   accept=".zip" style="display:none">
+
+            <div *ngIf="!selectedFile" class="drop-content">
+              <i class="bi bi-cloud-arrow-up-fill text-primary"></i>
+              <h3>Drag & Drop project ZIP</h3>
+              <p>or <span class="text-link">browse files</span></p>
+              <p class="text-muted">Only .zip files supported (Max 50MB)</p>
+            </div>
+
+            <div *ngIf="selectedFile" class="file-preview">
+              <i class="bi bi-file-earmark-zip-fill text-primary"></i>
+              <div class="file-info">
+                <span class="name">{{ selectedFile.name }}</span>
+                <span class="size">{{ (selectedFile.size / 1024 / 1024) | number:'1.2-2' }} MB</span>
+              </div>
+              <button type="button" class="btn-remove" (click)="removeFile(); $event.stopPropagation()">
+                <i class="bi bi-x-circle-fill"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Error Messages -->
+          <div *ngIf="errorMessage" class="error-box">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            {{ errorMessage }}
+          </div>
+
+          <!-- Progress Bar -->
+          <div *ngIf="isUploading" class="progress-container">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Generating Dockerfile with AI...</p>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" 
+                  class="btn btn-lg btn-primary w-full mt-4" 
+                  [disabled]="uploadForm.invalid || isUploading">
+            <i class="bi bi-stars"></i>
+            {{ isUploading ? 'Uploading...' : 'Generate Dockerfile' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

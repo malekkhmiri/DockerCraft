@@ -1,0 +1,85 @@
+<div class="auth-page verify-theme">
+  <!-- Left Column: Security context -->
+  <div class="auth-visual">
+    <div class="visual-content">
+      <div class="logo-group mb-5">
+        <div class="logo-icon-auth">
+          <img src="logo.png" alt="DockerCraft" class="logo-image-auth">
+        </div>
+        <span class="logo-text">DockerCraft</span>
+      </div>
+
+      <h1 class="visual-title">Sécurité de votre <span class="gradient-text-orange">compte.</span></h1>
+      <p class="visual-subtitle">La vérification par email garantit que vous seul pouvez accéder à vos environnements de déploiement.</p>
+      
+      <div class="security-badges mt-5">
+        <div class="badge-item">
+          <i class="bi bi-shield-lock-fill"></i>
+          <span>Authentification OTP</span>
+        </div>
+        <div class="badge-item">
+          <i class="bi bi-clock-history"></i>
+          <span>Validité : 10 minutes</span>
+        </div>
+      </div>
+    </div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <!-- Right Column: OTP Form -->
+  <div class="auth-form-container">
+    <div class="auth-form-card glass-card animate-fade-up">
+      <header class="text-center mb-5">
+        <div class="shield-main-icon"><i class="bi bi-envelope-check"></i></div>
+        <h2>Vérification Email</h2>
+        <p>Un code à 6 chiffres a été envoyé à : <br> <strong class="text-orange">{{ email }}</strong></p>
+      </header>
+
+      <div *ngIf="errorMessage" class="alert-error mb-4">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <div *ngIf="successMessage" class="alert-success-box mb-4">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <form [formGroup]="verifyForm" (ngSubmit)="onSubmit()">
+        <div class="otp-container">
+          <div class="otp-inputs">
+            <input id="d1" type="text" maxlength="1" formControlName="d1" class="otp-box" [class.is-invalid]="submitted && f['d1'].errors" (input)="onDigitInput($event, 'd2', null)" (keydown)="onKeyDown($event, null)">
+            <input id="d2" type="text" maxlength="1" formControlName="d2" class="otp-box" [class.is-invalid]="submitted && f['d2'].errors" (input)="onDigitInput($event, 'd3', 'd1')" (keydown)="onKeyDown($event, 'd1')">
+            <input id="d3" type="text" maxlength="1" formControlName="d3" class="otp-box" [class.is-invalid]="submitted && f['d3'].errors" (input)="onDigitInput($event, 'd4', 'd2')" (keydown)="onKeyDown($event, 'd2')">
+            <span class="otp-dash">-</span>
+            <input id="d4" type="text" maxlength="1" formControlName="d4" class="otp-box" [class.is-invalid]="submitted && f['d4'].errors" (input)="onDigitInput($event, 'd5', 'd3')" (keydown)="onKeyDown($event, 'd3')">
+            <input id="d5" type="text" maxlength="1" formControlName="d5" class="otp-box" [class.is-invalid]="submitted && f['d5'].errors" (input)="onDigitInput($event, 'd6', 'd4')" (keydown)="onKeyDown($event, 'd4')">
+            <input id="d6" type="text" maxlength="1" formControlName="d6" class="otp-box" [class.is-invalid]="submitted && f['d6'].errors" (input)="onDigitInput($event, null, 'd5')" (keydown)="onKeyDown($event, 'd5')">
+          </div>
+        </div>
+
+        <p *ngIf="submitted && verifyForm.invalid" class="form-error text-center mt-3">
+          Veuillez remplir tous les champs du code OTP.
+        </p>
+
+        <button type="submit" class="btn btn-primary w-full py-3 mt-5" [disabled]="loading">
+          <span *ngIf="!loading">Vérifier mon email</span>
+          <div *ngIf="loading" class="spinner-sm"></div>
+        </button>
+
+        <div class="resend-block mt-4 text-center">
+            <p class="text-secondary subtitle">Vous n'avez pas reçu le code ?</p>
+            <button type="button" class="btn btn-ghost btn-sm mt-1" (click)="resendCode()" [disabled]="resendLoading || countdown > 0">
+               <span *ngIf="!resendLoading">{{ countdown > 0 ? 'Renvoyer dans ' + countdown + 's' : 'Renvoyer le code' }}</span>
+               <div *ngIf="resendLoading" class="spinner-sm"></div>
+            </button>
+        </div>
+
+        <div class="back-nav text-center mt-4">
+           <a routerLink="/signup" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Retour à l'inscription</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

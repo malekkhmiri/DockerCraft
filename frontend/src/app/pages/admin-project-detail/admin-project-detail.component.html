@@ -1,0 +1,214 @@
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <app-admin-sidebar></app-admin-sidebar>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container">
+        <div *ngFor="let toast of toasts" class="toast-item" [class]="'toast-' + toast.type">
+            <i class="bi" [ngClass]="{
+                'bi-check-circle-fill': toast.type === 'success',
+                'bi-x-circle-fill': toast.type === 'error',
+                'bi-info-circle-fill': toast.type === 'info'
+            }"></i>
+            <span>{{ toast.message }}</span>
+            <button class="toast-close" (click)="removeToast(toast.id)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <main class="editor-main">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <a routerLink="/admin/projects" class="back-btn">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div class="breadcrumb-section">
+                    <div class="breadcrumb-path">
+                        <span class="bc-item">Admin</span>
+                        <i class="bi bi-chevron-right bc-sep"></i>
+                        <span class="bc-item">Projets</span>
+                        <i class="bi bi-chevron-right bc-sep"></i>
+                        <span class="bc-item active" *ngIf="project">{{ project.name }}</span>
+                    </div>
+                    <div class="project-meta" *ngIf="project">
+                        <span class="lang-tag">{{ getLangIcon(project.language) }} {{ project.language }}</span>
+                        <span class="admin-badge"><i class="bi bi-shield-fill-check me-1"></i> Admin</span>
+                    </div>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <button class="tool-btn" (click)="copyToClipboard()" title="Copier le contenu">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+                <button class="tool-btn" (click)="formatDockerfile()" title="Formater">
+                    <i class="bi bi-code-slash"></i>
+                </button>
+                <button class="tool-btn warn" (click)="resetChanges()" [disabled]="!hasChanges"
+                    title="Annuler les modifications">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+                <button class="btn-save" (click)="saveAndRerun()" [disabled]="saving || rerunning || !dockerfile">
+                    <span *ngIf="!saving && !rerunning">
+                        <i class="bi bi-play-fill me-1"></i> Sauvegarder & Relancer
+                    </span>
+                    <span *ngIf="saving || rerunning" class="d-flex align-items-center gap-2">
+                        <span class="spinner spinner-sm"></span>
+                        {{ saving ? 'Sauvegarde…' : 'Pipeline en cours…' }}
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Change indicator -->
+        <div class="change-banner" *ngIf="hasChanges">
+            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+            Vous avez des modifications non sauvegardées
+            <button class="reset-link" (click)="resetChanges()">Annuler</button>
+        </div>
+
+        <!-- Editor Tabs -->
+        <div class="editor-area">
+            <!-- Tab bar -->
+            <div class="tab-bar">
+                <button class="tab-btn" [class.active]="activeTab === 'editor'" (click)="activeTab = 'editor'">
+                    <i class="bi bi-pencil-square me-1"></i> Éditeur
+                </button>
+                <button class="tab-btn" [class.active]="activeTab === 'preview'" (click)="activeTab = 'preview'">
+                    <i class="bi bi-eye me-1"></i> Aperçu
+                </button>
+                <div class="tab-spacer">
+                    <span class="file-label"><i class="bi bi-filetype-yml" style="color:#3b82f6"></i> Dockerfile</span>
+                </div>
+            </div>
+
+            <!-- EDITOR TAB -->
+            <div class="editor-content" *ngIf="activeTab === 'editor'">
+                <div class="loading-state" *ngIf="loading">
+                    <div class="spinner"></div>
+                    <span>Chargement du Dockerfile…</span>
+                </div>
+
+                <div class="editor-wrapper" *ngIf="!loading && dockerfile">
+                    <!-- Line numbers -->
+                    <div class="line-nums" aria-hidden="true">
+                        <div class="line-num" *ngFor="let i of (dockerfile.content || '').split('\n'); let idx = index">
+                            {{ idx + 1 }}
+                        </div>
+                    </div>
+                    <!-- Textarea -->
+                    <textarea class="code-editor" [(ngModel)]="dockerfile.content" (click)="onEditorClick($event)"
+                        (keyup)="onEditorKeyUp($event)" spellcheck="false" autocomplete="off" autocorrect="off"
+                        autocapitalize="off" placeholder="# Dockerfile vide — commencez par FROM ..."></textarea>
+                </div>
+
+                <div class="no-dockerfile" *ngIf="!loading && !dockerfile">
+                    <i class="bi bi-file-earmark-x display-1 opacity-25"></i>
+                    <p>Aucun Dockerfile associé à ce projet</p>
+                </div>
+
+                <!-- Status bar -->
+                <div class="status-bar" *ngIf="!loading && dockerfile">
+                    <div class="status-left">
+                        <span class="status-item"><i class="bi bi-cursor-text me-1"></i> Ln {{ cursorLine }}, Col {{
+                            cursorCol }}</span>
+                        <span class="status-item"><i class="bi bi-list me-1"></i> {{ lineCount }} lignes</span>
+                        <span class="status-item"><i class="bi bi-type me-1"></i> {{ wordCount }} tokens</span>
+                    </div>
+                    <div class="status-right">
+                        <span class="status-item text-success" *ngIf="!hasChanges">
+                            <i class="bi bi-check-circle me-1"></i> Synchronisé
+                        </span>
+                        <span class="status-item text-warning" *ngIf="hasChanges">
+                            <i class="bi bi-dot me-1" style="font-size:1.2rem"></i> Modifié
+                        </span>
+                        <span class="status-item">Dockerfile · Docker</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREVIEW TAB -->
+            <div class="preview-content" *ngIf="activeTab === 'preview'">
+                <div class="preview-header">
+                    <span class="small text-secondary">Aperçu avec coloration syntaxique (lecture seule)</span>
+                    <button class="icon-btn-sm" (click)="copyToClipboard()">
+                        <i class="bi bi-clipboard me-1"></i> Copier
+                    </button>
+                </div>
+                <pre class="code-preview" [innerHTML]="getHighlightedContent()"></pre>
+            </div>
+        </div>
+
+        <!-- Bottom panels -->
+        <div class="bottom-panels">
+            <!-- Pipeline Status -->
+            <div class="panel pipeline-panel">
+                <div class="panel-header" (click)="toggleLogs()">
+                    <div class="panel-title">
+                        <i class="bi bi-diagram-3-fill me-2 text-primary"></i>
+                        Statut Pipeline
+                        <span [class]="getStatusClass(pipeline?.status)" *ngIf="pipeline" style="margin-left: 10px;">
+                            {{ getStatusIcon(pipeline?.status) }} {{ pipeline?.status }}
+                        </span>
+                    </div>
+                    <div class="panel-actions">
+                        <button class="icon-btn-sm" (click)="rerunPipeline(); $event.stopPropagation()"
+                            [disabled]="rerunning" title="Forcer le redémarrage">
+                            <i class="bi bi-arrow-repeat" [class.spin]="rerunning"></i>
+                        </button>
+                        <i class="bi" [ngClass]="showLogs ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+                    </div>
+                </div>
+
+                <!-- Logs terminal -->
+                <div class="logs-panel" *ngIf="showLogs">
+                    <div class="logs-terminal">
+                        <div class="terminal-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                            <span class="terminal-title">pipeline.log — {{ project?.name }}</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="log-line" *ngFor="let log of pipelineLogs" [class]="getLogClass(log)">
+                                <span class="log-prefix">$</span> {{ log }}
+                            </div>
+                            <div class="cursor-blink" *ngIf="rerunning">_</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="panel history-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="bi bi-clock-history me-2 text-warning"></i>
+                        Historique — {{ history.length }} entrée(s)
+                    </div>
+                    <div class="spinner spinner-sm" *ngIf="loadingHistory"></div>
+                </div>
+                <div class="history-list">
+                    <div class="history-entry" *ngFor="let h of history; let i = index">
+                        <div class="history-dot" [class.first]="i === 0"></div>
+                        <div class="history-body">
+                            <div class="history-action">{{ h.action }}</div>
+                            <div class="history-meta">
+                                <span class="history-user"><i class="bi bi-person me-1"></i>{{ h.user }}</span>
+                                <span class="history-date">{{ h.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                                <span class="history-restore" *ngIf="i !== 0" (click)="restoreVersion(h)">
+                                    <i class="bi bi-arrow-counterclockwise ms-2"></i> Restaurer
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="empty-history" *ngIf="history.length === 0 && !loadingHistory">
+                        Aucun historique disponible
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

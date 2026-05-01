@@ -1,0 +1,13 @@
+# /user-service/.gitlab-ci.yml
+image: maven:3.8.3-openjdk-17
+
+stages:
+  - build
+
+build_job:
+  stage: build
+  script:
+    - mvn clean package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
