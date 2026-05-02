@@ -21,16 +21,20 @@ RUN if [ -d "/usr/share/nginx/html-tmp/browser" ]; then \
         mv /usr/share/nginx/html-tmp/* /usr/share/nginx/html/; \
     fi && rm -rf /usr/share/nginx/html-tmp
 
-# Custom nginx config to handle Angular routing and dynamic PORT
+# Write a STATIC nginx config on port 8080
 RUN echo 'server { \
-    listen ${PORT}; \
+    listen 8080; \
     server_name localhost; \
     root /usr/share/nginx/html; \
     index index.html index.htm; \
     location / { \
         try_files $uri $uri/ /index.html; \
     } \
-}' > /etc/nginx/conf.d/default.conf.template
+    error_page 500 502 503 504 /50x.html; \
+    location = /50x.html { \
+        root /usr/share/nginx/html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 8080
-CMD ["sh", "-c", "envsubst \"\${PORT}\" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g \"daemon off;\""]
+CMD ["nginx", "-g", "daemon off;"]
