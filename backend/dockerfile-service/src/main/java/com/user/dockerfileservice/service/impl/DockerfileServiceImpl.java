@@ -17,10 +17,11 @@ import com.user.dockerfileservice.exception.UnsupportedLanguageException;
 import com.user.dockerfileservice.strategy.LanguageStrategy;
 import com.user.dockerfileservice.strategy.StrategyRegistry;
 import com.user.dockerfileservice.service.DockerfileGenerationService;
+import com.user.dockerfileservice.util.DebugLogger;
 import java.util.List;
 
 @Service
-public class DockerfileServiceImpl implements DockerfileService {
+public class DockerfileServiceImpl implements DockerfileService, DebugLogger {
 
     private static final Logger logger = LoggerFactory.getLogger(DockerfileServiceImpl.class);
     
@@ -31,15 +32,16 @@ public class DockerfileServiceImpl implements DockerfileService {
         return new java.util.ArrayList<>(debugLogs);
     }
 
-    public static void addDebugLogStatic(String msg) {
-        String log = java.time.LocalDateTime.now() + " - " + msg;
-        debugLogs.add(log);
+    @Override
+    public void log(String msg) {
+        String logEntry = java.time.LocalDateTime.now() + " - " + msg;
+        debugLogs.add(logEntry);
+        logger.info(msg);
         if (debugLogs.size() > 50) debugLogs.remove(0);
     }
 
     private void addDebugLog(String msg) {
-        addDebugLogStatic(msg);
-        logger.info(msg);
+        log(msg);
     }
     private final DockerfileRepository repository;
     @org.springframework.context.annotation.Lazy

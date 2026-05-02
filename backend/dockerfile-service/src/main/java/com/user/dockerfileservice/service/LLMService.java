@@ -1,6 +1,7 @@
 package com.user.dockerfileservice.service;
 
 import com.user.dockerfileservice.dto.AnalysisResult;
+import com.user.dockerfileservice.util.DebugLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,7 +17,9 @@ import java.util.regex.Pattern;
 public class LLMService {
 
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
-    private final RestTemplate restTemplate;
+
+    private static final String USER_TURN =
+            "Generate the Dockerfile for this project now. Output only the Dockerfile, nothing else.";
 
     private static final String ERROR_DOCKERFILE = """
             # Erreur lors de la génération
@@ -24,69 +27,66 @@ public class LLMService {
             CMD ["echo", "error"]
             """;
 
+    private final RestTemplate restTemplate;
+    private final DebugLogger debugLogger;
+
     @Value("${OLLAMA_MODEL:qwen2.5-coder:3b}")
     private String modelName;
 
     @Value("${OLLAMA_URL:http://dc-ollama:8080}")
     private String ollamaUrl;
 
-    public LLMService(@Qualifier("externalRestTemplate") RestTemplate restTemplate) {
+    public LLMService(@Qualifier("externalRestTemplate") RestTemplate restTemplate,
+                      DebugLogger debugLogger) {
         this.restTemplate = restTemplate;
+        this.debugLogger  = debugLogger;
     }
 
-    public String generate(AnalysisResult analysis, String userPrompt) {
+    public String generate(AnalysisResult analysis) {
         String systemPrompt = buildSystemPrompt(analysis);
-        logger.info("🚀 Génération ARCHITECTE pour {} (Java {}, DB {})",
+        logger.info("Génération pour {} (Java {}, DB {})",
                 analysis.getArtifactId(),
                 analysis.getJavaVersion(),
                 analysis.getDatabaseType());
-        return callOllama(systemPrompt, userPrompt);
+        return callOllama(systemPrompt);
     }
 
     private String buildSystemPrompt(AnalysisResult analysis) {
-        String javaVer    = analysis.getJavaVersion() != null ? analysis.getJavaVersion() : "17";
-        String framework  = analysis.getFramework();
-        String dbType     = analysis.getDatabaseType();
-        String artifact   = analysis.getArtifactName();
-        String health     = analysis.getHealthEndpoint();
-        
+        String javaVer   = analysis.getJavaVersion()   != null ? analysis.getJavaVersion()   : "17";
+        String framework = analysis.getFramework()     != null ? analysis.getFramework()     : "spring-boot";
+        String dbType    = analysis.getDatabaseType();
+        String artifact  = analysis.getArtifactName()  != null ? analysis.getArtifactName()  : "app.jar";
+        String health    = analysis.getHealthEndpoint();
+
         boolean isPlain   = "java-plain".equalsIgnoreCase(framework);
-        boolean hasDb     = dbType != null && !dbType.equalsIgnoreCase("h2") && !dbType.equalsIgnoreCase("none");
+        boolean hasDb     = dbType != null
+                         && !dbType.equalsIgnoreCase("h2")
+                         && !dbType.equalsIgnoreCase("none");
         boolean hasHealth = health != null && !health.isBlank();
 
         StringBuilder sb = new StringBuilder();
 
-        // ── RÔLE ──────────────────────────────────────────────────────────────
         sb.append("""
-            You are a professional Dockerfile generator. Your ONLY output is a valid, production-ready Dockerfile.
-            No explanations. No markdown fences. No comments unless they are Dockerfile comments (#).
-            Start directly with FROM.
+            You are a Dockerfile generator. Your ONLY output is a valid Dockerfile.
+            No explanations. No markdown. Start directly with FROM.
 
             """);
 
-        // ── CONTEXTE PROJET ───────────────────────────────────────────────────
-        sb.append("## Project Facts\n");
-        sb.append("- Framework : ").append(framework).append("\n");
-        sb.append("- Java      : ").append(javaVer).append("\n");
-        sb.append("- Database  : ").append(dbType != null ? dbType : "none").append("\n");
-        sb.append("- JAR name  : ").append(artifact).append("\n");
-        sb.append("- Health URL: ").append(hasHealth ? health : "none").append("\n\n");
+        sb.append("## Project Facts\n")
+          .append("- Framework : ").append(framework).append("\n")
+          .append("- Java      : ").append(javaVer).append("\n")
+          .append("- Database  : ").append(dbType != null ? dbType : "none").append("\n")
+          .append("- JAR name  : ").append(artifact).append("\n")
+          .append("- Health URL: ").append(hasHealth ? health : "none").append("\n\n");
 
-        // ── CAS 1 : JAVA PLAIN (Console App) ──────────────────────────────────
         if (isPlain) {
-            String jarBaseName = artifact.replace(".jar", "");
             sb.append("""
-                ## CASE: java-plain (console application, NO web server)
-                MANDATORY rules — violation = wrong output:
-                - DO NOT add EXPOSE
-                - DO NOT add HEALTHCHECK
-                - DO NOT add ENV SPRING_* or DB variables
-                - DO NOT add wget or any runtime package
-                - DO NOT add a non-root user (unnecessary for a console app)
-                - Use exec form ENTRYPOINT: ["java", "-jar", "app.jar"]
-                - Multi-stage: maven:3.9.6-eclipse-temurin-%s-alpine → eclipse-temurin:%s-jre-alpine
+                ## CASE: java-plain (console app — NO web server)
+                STRICT rules:
+                - DO NOT add EXPOSE, HEALTHCHECK, ENV SPRING_*, wget, or non-root user
+                - ENTRYPOINT must be exec form: ["java", "-jar", "app.jar"]
 
-                Expected output structure:
+                Generate exactly this structure:
                 FROM maven:3.9.6-eclipse-temurin-%s-alpine AS builder
                 WORKDIR /build
                 COPY pom.xml .
@@ -96,31 +96,33 @@ public class LLMService {
                 WORKDIR /app
                 COPY --from=builder /build/target/%s app.jar
                 ENTRYPOINT ["java", "-jar", "app.jar"]
-                """.formatted(javaVer, javaVer, javaVer, javaVer, artifact));
+                """.formatted(javaVer, javaVer, artifact));
             return sb.toString();
         }
 
-        // ── CAS 2 : SPRING BOOT ───────────────────────────────────────────────
         sb.append("""
-            ## CASE: Spring Boot application
-            MANDATORY build stage:
+            ## CASE: Spring Boot
+            Build stage (DO NOT switch USER here — Maven needs write access):
             - FROM maven:3.9.6-eclipse-temurin-%s-alpine AS builder
             - WORKDIR /build
-            - COPY pom.xml . then RUN mvn dependency:go-offline -B (cache layer)
+            - COPY pom.xml . && RUN mvn dependency:go-offline -B
             - COPY src ./src
             - RUN mvn clean package -DskipTests -B
-            - DO NOT switch USER before the build — Maven needs write access
 
-            MANDATORY runtime stage:
+            Runtime stage:
             - FROM eclipse-temurin:%s-jre-alpine AS runtime
-            - Create non-root user BEFORE switching: RUN addgroup -S spring && adduser -S spring -G spring
+            - RUN addgroup -S spring && adduser -S spring -G spring%s
             - USER spring:spring
             - WORKDIR /app
+            - ENV SPRING_PROFILES_ACTIVE=prod JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
             - COPY --from=builder --chown=spring:spring /build/target/%s app.jar
+            - EXPOSE 8080
             - ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
-            """.formatted(javaVer, javaVer, artifact));
+            """.formatted(
+                javaVer, javaVer,
+                hasHealth ? " \\\\\n      && apk add --no-cache wget" : "",
+                artifact));
 
-        // ── DB CONFIG ─────────────────────────────────────────────────────────
         if (hasDb) {
             String jdbcUrl = switch (dbType.toLowerCase()) {
                 case "mysql"      -> "jdbc:mysql://db:3306/dbname";
@@ -129,86 +131,69 @@ public class LLMService {
             };
             sb.append("""
 
-                ## Database: %s
-                Add these ENV vars (values injected at runtime):
+                ## Database: %s — add exactly:
                 ENV SPRING_DATASOURCE_URL=%s \\
                     SPRING_DATASOURCE_USERNAME=CHANGE_ME_INJECT_AT_RUNTIME \\
                     SPRING_DATASOURCE_PASSWORD=CHANGE_ME_INJECT_AT_RUNTIME
-                DO NOT install libpq if database is mysql.
-                DO NOT install mysql-client if database is postgresql.
-                """.formatted(dbType, jdbcUrl));
+                %s
+                """.formatted(
+                    dbType, jdbcUrl,
+                    dbType.equalsIgnoreCase("mysql")
+                        ? "DO NOT install libpq or postgresql-client."
+                        : "DO NOT install mysql-client."));
         } else {
-            sb.append("""
-
-                ## Database: none or H2 (embedded)
-                DO NOT add SPRING_DATASOURCE_* ENV vars.
-                DO NOT install any DB client package.
-                """);
+            sb.append("\n## No external DB — DO NOT add SPRING_DATASOURCE_* or any DB client.\n");
         }
 
-        // ── HEALTHCHECK CONFIG ──────────────────────────────────────────────
         if (hasHealth) {
             sb.append("""
 
-                ## Healthcheck
-                ADD wget: apk add --no-cache wget (in the same RUN as addgroup)
+                ## Healthcheck — add exactly:
                 HEALTHCHECK --interval=30s --timeout=10s --retries=5 \\
                   CMD wget --quiet --tries=1 --spider http://localhost:8080%s || exit 1
                 """.formatted(health));
         } else {
-            sb.append("""
-
-                ## Healthcheck: none
-                DO NOT add HEALTHCHECK.
-                DO NOT install wget.
-                """);
+            sb.append("\n## No healthcheck — DO NOT add HEALTHCHECK or wget.\n");
         }
-
-        // ── ENV COMMUN ────────────────────────────────────────────────────────
-        sb.append("""
-
-            ## Always add these ENV vars for Spring Boot:
-            ENV SPRING_PROFILES_ACTIVE=prod \\
-                JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-
-            ## Always add:
-            EXPOSE 8080
-            """);
 
         return sb.toString();
     }
 
-    private String callOllama(String systemPrompt, String prompt) {
+    private String callOllama(String systemPrompt) {
+        debugLogger.log("Envoi requête à Ollama (" + ollamaUrl + ")");
         try {
-            Map<String, Object> request = new java.util.HashMap<>();
-            request.put("model", modelName);
-            request.put("system", systemPrompt);
-            request.put("prompt", prompt != null ? prompt : "Generate a production-ready Dockerfile");
-            request.put("stream", false);
-
-            com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("📡 Envoi de la requête à Ollama (" + ollamaUrl + ")...");
-            
+            Map<String, Object> request = Map.of(
+                    "model",  modelName,
+                    "system", systemPrompt,
+                    "prompt", USER_TURN,
+                    "stream", false
+            );
             OllamaResponse response = restTemplate.postForObject(
                     ollamaUrl + "/api/generate", request, OllamaResponse.class);
             if (response != null && response.response() != null) {
                 String result = cleanResponse(response.response());
-                com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("✨ Réponse brute reçue de Ollama (" + result.length() + " chars)");
+                debugLogger.log("Réponse reçue (" + result.length() + " chars)");
                 return result;
             }
         } catch (Exception e) {
-            com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("❌ ERREUR OLLAMA: " + e.getMessage());
+            debugLogger.log("ERREUR OLLAMA: " + e.getMessage());
             logger.error("Erreur lors de l'appel à Ollama", e);
         }
         return ERROR_DOCKERFILE;
     }
 
     private String cleanResponse(String response) {
+        // Supprimer les blocs markdown
         String cleaned = response.replaceAll("(?s)```(?:dockerfile|docker)?(.*?)```", "$1");
+
+        // Extraire depuis le premier FROM
         Matcher matcher = Pattern.compile("(?s)(FROM\\s+.+)").matcher(cleaned);
-        if (matcher.find()) {
-            cleaned = matcher.group(1)
-                    .replaceAll("(?m)^(?!FROM|RUN|COPY|ADD|ENV|EXPOSE|HEALTHCHECK|ENTRYPOINT|CMD|WORKDIR|ARG|LABEL|USER|VOLUME|#).*$\\n?", "");
-        }
+        if (!matcher.find()) return ERROR_DOCKERFILE;
+        cleaned = matcher.group(1);
+
+        // Couper la prose parasite après le Dockerfile (paragraphe qui suit une ligne vide)
+        cleaned = cleaned.replaceAll("(?m)\n{2,}[A-Z][a-z].*(?s).*$", "");
+
         return cleaned.trim();
     }
 
