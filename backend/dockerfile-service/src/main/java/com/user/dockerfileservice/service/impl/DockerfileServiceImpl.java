@@ -106,14 +106,19 @@ public class DockerfileServiceImpl implements DockerfileService {
             }
 
             // 6. Sauvegarde & Notification
-            Dockerfile dockerfile = Dockerfile.builder()
-                    .projectId(projectId)
-                    .content(content)
-                    .isValidated(isValid)
-                    .generationMethod(method)
-                    .build();
-            
-            repository.save(dockerfile);
+            try {
+                Dockerfile dockerfile = Dockerfile.builder()
+                        .projectId(projectId)
+                        .content(content)
+                        .isValidated(isValid)
+                        .generationMethod(method)
+                        .build();
+                
+                repository.save(dockerfile);
+                logger.info("✅ Dockerfile sauvegardé avec succès pour le projet #{} (Méthode: {})", projectId, method);
+            } catch (Exception e) {
+                logger.error("❌ ERREUR CRITIQUE lors de la sauvegarde du Dockerfile pour le projet #{}: {}", projectId, e.getMessage(), e);
+            }
             
             if (isValid) {
                 logger.info("✅ Dockerfile généré et validé pour le projet #{}", projectId);
