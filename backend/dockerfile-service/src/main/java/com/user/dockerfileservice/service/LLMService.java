@@ -10,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 
 @Service
+@org.springframework.context.annotation.Lazy
 public class LLMService {
 
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
