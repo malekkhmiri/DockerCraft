@@ -3,16 +3,160 @@ kind: Namespace
 metadata:
   name: dockergeneration
 ---
-apiVersion: v1
-kind: ConfigMap
+# --- Infrastructure: Database ---
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: dockergeneration-config
+  name: postgres
   namespace: dockergeneration
-data:
-  SPRING_PROFILES_ACTIVE: prod
-  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery:9012/eureka/
-  OLLAMA_URL: http://ollama:11434
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: DockerCraft
+        - name: POSTGRES_USER
+          value: pfe
+        - name: POSTGRES_PASSWORD
+          value: pfe
+        ports:
+        - containerPort: 5432
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-db
+  namespace: dockergeneration
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+# --- Infrastructure: RabbitMQ ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: dockergeneration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management
+        ports:
+        - containerPort: 5672
+        - containerPort: 15672
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-rabbitmq
+  namespace: dockergeneration
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+  - name: amqp
+    port: 5672
+    targetPort: 5672
+  - name: management
+    port: 15672
+    targetPort: 15672
+---
+# --- Microservices: Discovery ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery
+  namespace: dockergeneration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discovery
+  template:
+    metadata:
+      labels:
+        app: discovery
+    spec:
+      containers:
+      - name: discovery
+        image: malekkhmiri/dockergeneration-discovery:latest
+        ports:
+        - containerPort: 8761
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-discovery
+  namespace: dockergeneration
+spec:
+  selector:
+    app: discovery
+  ports:
+  - port: 8761
+    targetPort: 8761
+---
+# --- Microservices: Config Server ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: dockergeneration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      containers:
+      - name: config-server
+        image: malekkhmiri/dockergeneration-config-server:latest
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: native
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: http://dc-discovery:8761/eureka/
+        ports:
+        - containerPort: 8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-config-server
+  namespace: dockergeneration
+spec:
+  selector:
+    app: config-server
+  ports:
+  - port: 8888
+    targetPort: 8888
+---
+# --- Microservices: Gateway ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,23 +174,194 @@ spec:
     spec:
       containers:
       - name: gateway
-        image: dockergeneration-gateway:latest
+        image: malekkhmiri/dockergeneration-gateway:latest
+        env:
+        - name: SPRING_CLOUD_CONFIG_URI
+          value: http://dc-config-server:8888
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: http://dc-discovery:8761/eureka/
         ports:
-        - containerPort: 9013
-        envFrom:
-        - configMapRef:
-            name: dockergeneration-config
+        - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: gateway
+  name: dc-gateway
   namespace: dockergeneration
 spec:
   selector:
     app: gateway
   ports:
-  - protocol: TCP
-    port: 9013
-    targetPort: 9013
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+---
+# --- Frontend ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: dockergeneration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: malekkhmiri/dockergeneration-frontend:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: dockergeneration
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
   type: LoadBalancer
+---
+# --- Microservices: User Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: dockergeneration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: malekkhmiri/dockergeneration-user-service:latest
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://dc-db:5432/DockerCraft
+        - name: SPRING_DATASOURCE_USERNAME
+          value: pfe
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: pfe
+        - name: SPRING_RABBITMQ_HOST
+          value: dc-rabbitmq
+        - name: SPRING_CLOUD_CONFIG_URI
+          value: http://dc-config-server:8888
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: http://dc-discovery:8761/eureka/
+        ports:
+        - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-user-service
+  namespace: dockergeneration
+spec:
+  selector:
+    app: user-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+---
+# --- Microservices: Project Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-service
+  namespace: dockergeneration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-service
+  template:
+    metadata:
+      labels:
+        app: project-service
+    spec:
+      containers:
+      - name: project-service
+        image: malekkhmiri/dockergeneration-project-service:latest
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://dc-db:5432/DockerCraft
+        - name: SPRING_RABBITMQ_HOST
+          value: dc-rabbitmq
+        - name: SPRING_CLOUD_CONFIG_URI
+          value: http://dc-config-server:8888
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: http://dc-discovery:8761/eureka/
+        ports:
+        - containerPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-project-service
+  namespace: dockergeneration
+spec:
+  selector:
+    app: project-service
+  ports:
+  - port: 8082
+    targetPort: 8082
+---
+# --- Microservices: Dockerfile Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dockerfile-service
+  namespace: dockergeneration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dockerfile-service
+  template:
+    metadata:
+      labels:
+        app: dockerfile-service
+    spec:
+      containers:
+      - name: dockerfile-service
+        image: malekkhmiri/dockergeneration-dockerfile-service:latest
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://dc-db:5432/DockerCraft
+        - name: SPRING_RABBITMQ_HOST
+          value: dc-rabbitmq
+        - name: OLLAMA_URL
+          value: http://dc-ollama:11434
+        - name: SPRING_CLOUD_CONFIG_URI
+          value: http://dc-config-server:8888
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: http://dc-discovery:8761/eureka/
+        ports:
+        - containerPort: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-dockerfile-service
+  namespace: dockergeneration
+spec:
+  selector:
+    app: dockerfile-service
+  ports:
+  - port: 8083
+    targetPort: 8083

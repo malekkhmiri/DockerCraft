@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080/api',
-  wsUrl: 'http://localhost:8084', // For WebSocket in pipeline-service
+  userServiceUrl: 'https://dc-user-service-715286351060.us-central1.run.app/api',
+  projectServiceUrl: 'https://dc-project-service-715286351060.us-central1.run.app/api',
   dockerfileServiceUrl: 'https://dc-dockerfile-service-715286351060.us-central1.run.app/api'
 };

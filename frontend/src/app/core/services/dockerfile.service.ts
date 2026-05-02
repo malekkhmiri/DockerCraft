@@ -8,9 +8,9 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class DockerfileService {
-  private apiUrl = `${environment.dockerfileServiceUrl || environment.apiUrl}/dockerfiles`;
-  private projectUrl = `${environment.apiUrl}/projects`;
-  private userUrl = `${environment.apiUrl}/users`;
+  private apiUrl = `${environment.dockerfileServiceUrl}/dockerfiles`;
+  private projectUrl = `${environment.projectServiceUrl}/projects`;
+  private userUrl = `${environment.userServiceUrl}/users`;
 
   constructor(private http: HttpClient) { }
 

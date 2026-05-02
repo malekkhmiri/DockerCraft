@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = environment.apiUrl;
+  // private apiUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
@@ -17,19 +17,19 @@ export class AuthService {
   ) { }
 
   login(data: any): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/users/login`, data);
+    return this.http.post<AuthResponse>(`${environment.userServiceUrl}/users/login`, data);
   }
 
   signup(data: any): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/users/register`, data);
+    return this.http.post<AuthResponse>(`${environment.userServiceUrl}/users/register`, data);
   }
 
   verifyEmail(email: string, code: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/users/verify-email`, { email, code });
+    return this.http.post<AuthResponse>(`${environment.userServiceUrl}/users/verify-email`, { email, code });
   }
 
   resendOtp(email: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/users/resend-otp`, { email });
+    return this.http.post(`${environment.userServiceUrl}/users/resend-otp`, { email });
   }
 
   saveUserData(response: AuthResponse) {
@@ -130,6 +130,6 @@ export class AuthService {
   }
 
   changePassword(data: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/users/profile/password`, data);
+    return this.http.put(`${environment.userServiceUrl}/users/profile/password`, data);
   }
 }

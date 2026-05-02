@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class PipelineService {
-  private apiUrl = `${environment.apiUrl}/pipelines`;
+  private apiUrl = `${environment.projectServiceUrl}/pipelines`;
 
   constructor(private http: HttpClient) { }
 

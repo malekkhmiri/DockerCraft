@@ -51,7 +51,7 @@ export interface SystemActivity {
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-    private apiUrl = `${environment.apiUrl}/admin`;
+    private apiUrl = `${environment.userServiceUrl}/admin`;
 
     constructor(private http: HttpClient) { }
 
@@ -99,22 +99,22 @@ export class AdminService {
 
     // --- Gestion des Utilisateurs ---
     getUsers(): Observable<any[]> {
-        return this.http.get<any[]>(`${environment.apiUrl}/users`).pipe(
+        return this.http.get<any[]>(`${environment.userServiceUrl}/users`).pipe(
             catchError(() => of([]))
         );
     }
 
     toggleUserStatus(id: number, active: boolean): Observable<any> {
-        return this.http.put(`${environment.apiUrl}/users/${id}/status`, { active });
+        return this.http.put(`${environment.userServiceUrl}/users/${id}/status`, { active });
     }
 
     deleteUser(id: number): Observable<void> {
-        return this.http.delete<void>(`${environment.apiUrl}/users/${id}`);
+        return this.http.delete<void>(`${environment.userServiceUrl}/users/${id}`);
     }
 
     // --- Gestion des Projets ---
     getAllProjects(): Observable<any[]> {
-        return this.http.get<any[]>(`${environment.apiUrl}/projects`).pipe(
+        return this.http.get<any[]>(`${environment.projectServiceUrl}/projects`).pipe(
             map((projects: any[]) => projects.map((p: any) => ({
                 ...p,
                 uploadDate: p.createdAt,
@@ -125,19 +125,19 @@ export class AdminService {
     }
 
     getProjectById(id: string): Observable<any> {
-        return this.http.get<any>(`${environment.apiUrl}/projects/${id}`);
+        return this.http.get<any>(`${environment.projectServiceUrl}/projects/${id}`);
     }
 
     updateDockerfile(projectId: string, content: string): Observable<any> {
-        const baseUrl = environment.dockerfileServiceUrl || environment.apiUrl;
+        const baseUrl = environment.dockerfileServiceUrl;
         return this.http.put(`${baseUrl}/dockerfiles/project/${projectId}`, { content });
     }
 
     rerunPipeline(projectId: string): Observable<any> {
-        return this.http.post(`${environment.apiUrl}/pipelines/project/${projectId}/rerun`, {});
+        return this.http.post(`${environment.projectServiceUrl}/pipelines/project/${projectId}/rerun`, {});
     }
 
     deleteProject(id: string): Observable<void> {
-        return this.http.delete<void>(`${environment.apiUrl}/projects/${id}`);
+        return this.http.delete<void>(`${environment.projectServiceUrl}/projects/${id}`);
     }
 }

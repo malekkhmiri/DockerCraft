@@ -21,7 +21,7 @@ export interface StudentVerificationResponse {
 @Injectable({ providedIn: 'root' })
 export class StudentVerificationService {
 
-  private apiUrl = `${environment.apiUrl}/users/student-verification`;
+  private apiUrl = `${environment.userServiceUrl}/users/student-verification`;
 
   constructor(private http: HttpClient) {}
 

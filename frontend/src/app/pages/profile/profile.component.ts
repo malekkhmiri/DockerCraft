@@ -50,7 +50,7 @@ export class ProfileComponent implements OnInit {
 
   loadFullProfile(): void {
     if (!this.email) return;
-    this.http.get<any>(`${environment.apiUrl}/users/profile?email=${encodeURIComponent(this.email)}`).subscribe({
+    this.http.get<any>(`${environment.userServiceUrl}/users/profile?email=${encodeURIComponent(this.email)}`).subscribe({
       next: (profile) => {
         this.userProfile = profile;
       }

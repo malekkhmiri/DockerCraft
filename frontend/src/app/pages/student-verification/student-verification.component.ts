@@ -64,7 +64,7 @@ export class StudentVerificationComponent implements OnInit {
       return;
     }
     // /me = endpoint qui retourne l'utilisateur connecté via son JWT
-    this.http.get<any>(`${environment.apiUrl}/users/me`, {
+    this.http.get<any>(`${environment.userServiceUrl}/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
       next: (user) => {
