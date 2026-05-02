@@ -8,7 +8,8 @@ COPY . .
 RUN npm run build --configuration=production && \
     echo "--- DEBUG: LISTING ALL FILES IN /app ---" && \
     ls -R /app && \
-    echo "--- END DEBUG ---"
+    echo "--- END DEBUG ---" && \
+    exit 1
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:stable
