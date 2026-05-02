@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dc-db
+  namespace: dockercraft
+spec:
+  serviceName: "dc-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dc-db
+  template:
+    metadata:
+      labels:
+        app: dc-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-config
+              key: DB_NAME
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: common-secrets
+              key: DB_USERNAME
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: common-secrets
+              key: DB_PASSWORD
+        volumeMounts:
+        - name: pg-data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: pg-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-db
+  namespace: dockercraft
+spec:
+  selector:
+    app: dc-db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dc-rabbitmq
+  namespace: dockercraft
+spec:
+  serviceName: "dc-rabbitmq"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dc-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: dc-rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management
+        ports:
+        - containerPort: 5672
+        - containerPort: 15672
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: common-secrets
+              key: RABBITMQ_USER
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: common-secrets
+              key: RABBITMQ_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dc-rabbitmq
+  namespace: dockercraft
+spec:
+  selector:
+    app: dc-rabbitmq
+  ports:
+  - name: amqp
+    port: 5672
+  - name: management
+    port: 15672
