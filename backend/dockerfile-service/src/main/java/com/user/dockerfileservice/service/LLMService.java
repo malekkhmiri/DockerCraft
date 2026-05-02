@@ -44,35 +44,136 @@ public class LLMService {
     }
 
     private String buildSystemPrompt(AnalysisResult analysis) {
-        String dbType = analysis.getDatabaseType() != null ? analysis.getDatabaseType() : "H2";
-        String javaVer = analysis.getJavaVersion() != null ? analysis.getJavaVersion() : "17";
-        String port = String.valueOf(analysis.getPort() > 0 ? analysis.getPort() : 8080);
+        String javaVer    = analysis.getJavaVersion() != null ? analysis.getJavaVersion() : "17";
+        String framework  = analysis.getFramework();
+        String dbType     = analysis.getDatabaseType();
+        String artifact   = analysis.getArtifactName();
+        String health     = analysis.getHealthEndpoint();
+        
+        boolean isPlain   = "java-plain".equalsIgnoreCase(framework);
+        boolean hasDb     = dbType != null && !dbType.equalsIgnoreCase("h2") && !dbType.equalsIgnoreCase("none");
+        boolean hasHealth = health != null && !health.isBlank();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("You are an Expert AI & DevOps Architect. Task: Generate a production-grade, hyper-personalized Dockerfile.\n");
-        sb.append("PROJECT CONTEXT:\n");
-        sb.append("- Java Version: ").append(javaVer).append("\n");
-        sb.append("- Framework: ").append(analysis.getFramework()).append("\n");
-        sb.append("- Build Tool: ").append(analysis.getBuildTool()).append("\n");
-        sb.append("- Artifact: ").append(analysis.getArtifactName()).append("\n");
-        sb.append("- Service Port: ").append(port).append("\n");
-        sb.append("- Database Driver: ").append(dbType).append("\n");
-        
-        if (analysis.isHasSecurity()) sb.append("- SECURITY: Spring Security detected. Ensure proper ENV for credentials.\n");
-        if (analysis.isHasLombok()) sb.append("- LOMBOK: Used in project.\n");
-        if (analysis.getHealthEndpoint() != null) sb.append("- HEALTHCHECK: Endpoint is ").append(analysis.getHealthEndpoint()).append("\n");
 
-        sb.append("\nSTRICT ARCHITECTURAL RULES:\n");
-        sb.append("1. MULTI-STAGE: Build in 'maven:3.9.6-eclipse-temurin-").append(javaVer).append("-alpine' as 'builder'.\n");
-        sb.append("2. RUNTIME: Use 'eclipse-temurin:").append(javaVer).append("-jre-alpine' as 'runtime'.\n");
-        sb.append("3. SECURITY: Run as non-root user 'appuser'.\n");
-        sb.append("4. OPTIMIZATION: Use -XX:+UseContainerSupport and -XX:MaxRAMPercentage=75.0.\n");
-        sb.append("5. DYNAMIC ENV: If DB is MySQL/Postgres, use ENV variables for DB_URL, DB_USER, DB_PASS.\n");
-        if (analysis.getHealthEndpoint() != null) {
-            sb.append("6. HEALTHCHECK: Use 'wget' or 'curl' targeting http://localhost:").append(port).append(analysis.getHealthEndpoint()).append(".\n");
+        // ── RÔLE ──────────────────────────────────────────────────────────────
+        sb.append("""
+            You are a professional Dockerfile generator. Your ONLY output is a valid, production-ready Dockerfile.
+            No explanations. No markdown fences. No comments unless they are Dockerfile comments (#).
+            Start directly with FROM.
+
+            """);
+
+        // ── CONTEXTE PROJET ───────────────────────────────────────────────────
+        sb.append("## Project Facts\n");
+        sb.append("- Framework : ").append(framework).append("\n");
+        sb.append("- Java      : ").append(javaVer).append("\n");
+        sb.append("- Database  : ").append(dbType != null ? dbType : "none").append("\n");
+        sb.append("- JAR name  : ").append(artifact).append("\n");
+        sb.append("- Health URL: ").append(hasHealth ? health : "none").append("\n\n");
+
+        // ── CAS 1 : JAVA PLAIN (Console App) ──────────────────────────────────
+        if (isPlain) {
+            String jarBaseName = artifact.replace(".jar", "");
+            sb.append("""
+                ## CASE: java-plain (console application, NO web server)
+                MANDATORY rules — violation = wrong output:
+                - DO NOT add EXPOSE
+                - DO NOT add HEALTHCHECK
+                - DO NOT add ENV SPRING_* or DB variables
+                - DO NOT add wget or any runtime package
+                - DO NOT add a non-root user (unnecessary for a console app)
+                - Use exec form ENTRYPOINT: ["java", "-jar", "app.jar"]
+                - Multi-stage: maven:3.9.6-eclipse-temurin-%s-alpine → eclipse-temurin:%s-jre-alpine
+
+                Expected output structure:
+                FROM maven:3.9.6-eclipse-temurin-%s-alpine AS builder
+                WORKDIR /build
+                COPY pom.xml .
+                COPY src ./src
+                RUN mvn clean package -B
+                FROM eclipse-temurin:%s-jre-alpine AS runtime
+                WORKDIR /app
+                COPY --from=builder /build/target/%s app.jar
+                ENTRYPOINT ["java", "-jar", "app.jar"]
+                """.formatted(javaVer, javaVer, javaVer, javaVer, artifact));
+            return sb.toString();
         }
-        sb.append("7. ENTRYPOINT: Must use ENTRYPOINT [\"sh\", \"-c\", \"exec java $JAVA_OPTS -jar app.jar\"].\n");
-        sb.append("\nReturn ONLY the Dockerfile code.");
+
+        // ── CAS 2 : SPRING BOOT ───────────────────────────────────────────────
+        sb.append("""
+            ## CASE: Spring Boot application
+            MANDATORY build stage:
+            - FROM maven:3.9.6-eclipse-temurin-%s-alpine AS builder
+            - WORKDIR /build
+            - COPY pom.xml . then RUN mvn dependency:go-offline -B (cache layer)
+            - COPY src ./src
+            - RUN mvn clean package -DskipTests -B
+            - DO NOT switch USER before the build — Maven needs write access
+
+            MANDATORY runtime stage:
+            - FROM eclipse-temurin:%s-jre-alpine AS runtime
+            - Create non-root user BEFORE switching: RUN addgroup -S spring && adduser -S spring -G spring
+            - USER spring:spring
+            - WORKDIR /app
+            - COPY --from=builder --chown=spring:spring /build/target/%s app.jar
+            - ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
+            """.formatted(javaVer, javaVer, artifact));
+
+        // ── DB CONFIG ─────────────────────────────────────────────────────────
+        if (hasDb) {
+            String jdbcUrl = switch (dbType.toLowerCase()) {
+                case "mysql"      -> "jdbc:mysql://db:3306/dbname";
+                case "postgresql" -> "jdbc:postgresql://db:5432/dbname";
+                default           -> "jdbc:h2:mem:testdb";
+            };
+            sb.append("""
+
+                ## Database: %s
+                Add these ENV vars (values injected at runtime):
+                ENV SPRING_DATASOURCE_URL=%s \\
+                    SPRING_DATASOURCE_USERNAME=CHANGE_ME_INJECT_AT_RUNTIME \\
+                    SPRING_DATASOURCE_PASSWORD=CHANGE_ME_INJECT_AT_RUNTIME
+                DO NOT install libpq if database is mysql.
+                DO NOT install mysql-client if database is postgresql.
+                """.formatted(dbType, jdbcUrl));
+        } else {
+            sb.append("""
+
+                ## Database: none or H2 (embedded)
+                DO NOT add SPRING_DATASOURCE_* ENV vars.
+                DO NOT install any DB client package.
+                """);
+        }
+
+        // ── HEALTHCHECK CONFIG ──────────────────────────────────────────────
+        if (hasHealth) {
+            sb.append("""
+
+                ## Healthcheck
+                ADD wget: apk add --no-cache wget (in the same RUN as addgroup)
+                HEALTHCHECK --interval=30s --timeout=10s --retries=5 \\
+                  CMD wget --quiet --tries=1 --spider http://localhost:8080%s || exit 1
+                """.formatted(health));
+        } else {
+            sb.append("""
+
+                ## Healthcheck: none
+                DO NOT add HEALTHCHECK.
+                DO NOT install wget.
+                """);
+        }
+
+        // ── ENV COMMUN ────────────────────────────────────────────────────────
+        sb.append("""
+
+            ## Always add these ENV vars for Spring Boot:
+            ENV SPRING_PROFILES_ACTIVE=prod \\
+                JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+            ## Always add:
+            EXPOSE 8080
+            """);
 
         return sb.toString();
     }
