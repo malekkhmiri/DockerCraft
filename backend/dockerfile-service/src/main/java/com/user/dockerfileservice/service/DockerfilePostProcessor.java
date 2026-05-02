@@ -30,8 +30,11 @@ public class DockerfilePostProcessor {
         String fixed = fix(cleaned, analysis);
 
         if (isValid(fixed, analysis)) {
+            logger.info("✅ Dockerfile validé (Généré par l'IA)");
             return fixed;
         }
+        
+        logger.warn("⚠️ Échec de validation du Dockerfile IA. Utilisation du FALLBACK de sécurité.");
         return buildFallback(analysis);
     }
 
