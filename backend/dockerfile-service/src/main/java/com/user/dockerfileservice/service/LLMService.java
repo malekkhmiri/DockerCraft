@@ -79,13 +79,17 @@ public class LLMService {
                 "prompt", prompt,
                 "stream", false
         );
+        com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("📡 Envoi de la requête à Ollama (" + ollamaUrl + ")...");
         try {
             OllamaResponse response = restTemplate.postForObject(
                     ollamaUrl + "/api/generate", request, OllamaResponse.class);
             if (response != null && response.response() != null) {
-                return cleanResponse(response.response());
+                String result = cleanResponse(response.response());
+                com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("✨ Réponse brute reçue de Ollama (" + result.length() + " chars)");
+                return result;
             }
         } catch (Exception e) {
+            com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("❌ ERREUR OLLAMA: " + e.getMessage());
             logger.error("Erreur lors de l'appel à Ollama", e);
         }
         return ERROR_DOCKERFILE;

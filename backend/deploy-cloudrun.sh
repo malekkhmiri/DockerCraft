@@ -15,8 +15,8 @@ gcloud run deploy dc-ollama \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
-    --memory 4Gi \
-    --cpu 2 \
+    --memory 8Gi \
+    --cpu 4 \
     --port 8080 \
     --set-env-vars="OLLAMA_HOST=0.0.0.0:8080"
 

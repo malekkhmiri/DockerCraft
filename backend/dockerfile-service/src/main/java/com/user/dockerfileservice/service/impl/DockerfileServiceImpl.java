@@ -31,11 +31,15 @@ public class DockerfileServiceImpl implements DockerfileService {
         return new java.util.ArrayList<>(debugLogs);
     }
 
-    private void addDebugLog(String msg) {
+    public static void addDebugLogStatic(String msg) {
         String log = java.time.LocalDateTime.now() + " - " + msg;
         debugLogs.add(log);
-        logger.info(msg);
         if (debugLogs.size() > 50) debugLogs.remove(0);
+    }
+
+    private void addDebugLog(String msg) {
+        addDebugLogStatic(msg);
+        logger.info(msg);
     }
     private final DockerfileRepository repository;
     @org.springframework.context.annotation.Lazy
