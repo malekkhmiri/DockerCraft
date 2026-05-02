@@ -23,12 +23,7 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final InternalSecretFilter internalSecretFilter;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, InternalSecretFilter internalSecretFilter) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        this.internalSecretFilter = internalSecretFilter;
+    public SecurityConfig() {
     }
 
     @Bean

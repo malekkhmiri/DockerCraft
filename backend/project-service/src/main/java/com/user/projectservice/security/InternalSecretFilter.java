@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
-@Component
+//@Component
 public class InternalSecretFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(InternalSecretFilter.class);
