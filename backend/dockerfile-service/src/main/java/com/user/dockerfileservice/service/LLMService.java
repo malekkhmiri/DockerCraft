@@ -68,8 +68,16 @@ public class LLMService {
                 4. Match the Java version EXACTLY (%s).
                 5. Use 'exec' in ENTRYPOINT: ENTRYPOINT ["sh", "-c", "exec java ..."].
                 Return ONLY the Dockerfile code, no explanation.
-                """.formatted(javaVer, javaVer, dbType, analysis.getArtifactName(),
-                        healthEndpoint, javaVer);
+                """.formatted(
+                        javaVer, 
+                        analysis.getFramework(), 
+                        dbType, 
+                        analysis.getArtifactName(),
+                        healthEndpoint, 
+                        javaVer, 
+                        javaVer, 
+                        javaVer
+                );
     }
 
     private String callOllama(String systemPrompt, String prompt) {
