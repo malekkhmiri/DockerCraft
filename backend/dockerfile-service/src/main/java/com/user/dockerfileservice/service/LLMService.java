@@ -22,7 +22,9 @@ public class LLMService {
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
 
     private static final String USER_TURN =
-            "Generate the Dockerfile for this project now. Output only the Dockerfile, nothing else.";
+            "Generate the Dockerfile for this project now. " +
+            "Output only the Dockerfile, nothing else. " +
+            "Always use explicit backslash continuation (\\) for multi-line RUN commands.";
 
     private static final String ERROR_DOCKERFILE = """
             # Erreur lors de la génération
@@ -73,7 +75,7 @@ public class LLMService {
                 .javaVersion(raw.getJavaVersion()    != null ? raw.getJavaVersion()    : "17")
                 .framework(raw.getFramework()        != null ? raw.getFramework()      : "spring-boot")
                 .databaseType(raw.getDatabaseType())
-                .healthEndpoint(raw.getHealthEndpoint())
+                .healthEndpoint(raw.getHealthEndpoint()) // null = pas de healthcheck, intentionnel
                 .build();
     }
 
@@ -224,10 +226,9 @@ public class LLMService {
         return Arrays.stream(matcher.group(1).split("\n", -1))
                 .filter(line -> {
                     String t = line.stripLeading();
-                    return t.isBlank()
-                            || t.startsWith("&&")
-                            || t.startsWith("\\")
-                            || DOCKERFILE_KEYWORDS.stream().anyMatch(t::startsWith);
+                    if (t.isBlank() || t.startsWith("&&") || t.startsWith("\\")) return true;
+                    String firstWord = t.split("\\s+", 2)[0];
+                    return DOCKERFILE_KEYWORDS.contains(firstWord);
                 })
                 .collect(Collectors.joining("\n"))
                 .trim();
