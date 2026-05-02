@@ -214,15 +214,9 @@ public class ProjectAnalysisService {
         return factory.newDocumentBuilder().parse(pom.toFile());
     }
 
-    private String getXmlTag(Document doc, String tagName) {
-        NodeList list = doc.getElementsByTagName(tagName);
-        for (int i = 0; i < list.getLength(); i++) {
-            // On ignore les tags qui sont à l'intérieur de <parent>
-            if (!list.item(i).getParentNode().getNodeName().equals("parent")) {
-                return list.item(i).getTextContent();
-            }
-        }
-        return list.getLength() > 0 ? list.item(0).getTextContent() : null;
+    private String getXmlTag(Document doc, String tag) {
+        NodeList nodes = doc.getElementsByTagName(tag);
+        return nodes.getLength() > 0 ? nodes.item(0).getTextContent().trim() : null;
     }
 
     private List<String> extractModules(Document doc) {
@@ -234,21 +228,12 @@ public class ProjectAnalysisService {
         return res;
     }
 
-    private String detectJavaVersion(Document doc) {
-        String ver = getXmlTag(doc, "java.version");
-        if (ver == null) ver = getXmlTag(doc, "maven.compiler.source");
-        if (ver == null) ver = "17";
-        
-        // Nettoyage (ex: 1.8 -> 8)
-        if (ver.startsWith("1.")) ver = ver.substring(2);
-        
-        // Sécurité : on plafonne à 21 car au-delà c'est expérimental pour nos images
-        try {
-            int v = Integer.parseInt(ver);
-            if (v > 21) return "21";
-        } catch (Exception e) {}
-        
-        return ver;
+    private String detectJavaVersion(Document pom) {
+        for (String tag : List.of("java.version", "maven.compiler.release", "maven.compiler.source")) {
+            String v = getXmlTag(pom, tag);
+            if (v != null) return v.trim();
+        }
+        return "21"; // Default modern
     }
 
     private List<String> detectExtraEnvVars(String props) {
