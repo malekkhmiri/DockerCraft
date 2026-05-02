@@ -14,22 +14,24 @@ echo "📦 Compilation du JAR avec Maven..."
 mvn clean package -pl user-service -am -DskipTests
 
 # 2. Construction locale de l'image Docker
-echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
-docker build -t docker.io/$DOCKER_USER/dockergeneration-user-api:latest ./user-service
+TAG=$(date +%s)
+echo "🐳 Construction locale (Tag: $TAG)..."
+docker build --provenance=false -t docker.io/$DOCKER_USER/dockergeneration-user-api:$TAG ./user-service
 
-# 3. Poussée de l'image vers Docker Hub
-echo "📤 Poussée de l'image vers Docker Hub..."
-docker push docker.io/$DOCKER_USER/dockergeneration-user-api:latest
+# 3. Poussée de l'image
+echo "📤 Poussée de l'image (Tag: $TAG)..."
+docker push docker.io/$DOCKER_USER/dockergeneration-user-api:$TAG
 
-# 4. Déploiement sur Cloud Run
-echo "📦 Déploiement final sur dc-user-service (via Docker Hub)..."
+# 4. Déploiement
+echo "📦 Déploiement (Tag: $TAG)..."
 gcloud run deploy dc-user-service \
-    --image docker.io/$DOCKER_USER/dockergeneration-user-api:latest \
+    --image docker.io/$DOCKER_USER/dockergeneration-user-api:$TAG \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
     --memory 2Gi \
     --cpu 1 \
+    --cpu-boost \
     --timeout 300 \
     --set-env-vars="SPRING_PROFILES_ACTIVE=prod,SPRING_DATASOURCE_URL=jdbc:h2:mem:userdb;DB_CLOSE_DELAY=-1,SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver,SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.H2Dialect,EUREKA_CLIENT_ENABLED=false,SPRING_CLOUD_DISCOVERY_ENABLED=false,SPRING_CLOUD_CONFIG_ENABLED=false,SPRING_CONFIG_IMPORT_CHECK_ENABLED=false,SPRING_RABBITMQ_ENABLED=false,LOGGING_LEVEL_ROOT=INFO"
 
