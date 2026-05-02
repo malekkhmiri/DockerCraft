@@ -4,7 +4,7 @@
 PROJECT_ID=$(gcloud config get-value project)
 REGION="us-central1"
 
-echo "🚀 Déploiement INDUSTRIEL de DockerCraft sur Cloud Run..."
+echo "🚀 Déploiement de DockerCraft via LOCAL BUILD (Cloud Shell)..."
 
 # 1. Déploiement de Ollama (IA)
 echo "🤖 Déploiement de dc-ollama..."
@@ -20,12 +20,20 @@ gcloud run deploy dc-ollama \
 OLLAMA_URL=$(gcloud run services describe dc-ollama --region $REGION --format='value(status.url)')
 echo "✅ Ollama prêt à : $OLLAMA_URL"
 
-# 2. Construction de l'image Docker via Cloud Build (C'est ici que la magie opère !)
-echo "🛠️ Construction de l'image Dockerfile Service via Cloud Build..."
-gcloud builds submit --tag gcr.io/$PROJECT_ID/dockerfile-service ./dockerfile-service
+# 2. Compilation du JAR (On utilise le Maven du Cloud Shell)
+echo "📦 Compilation du JAR avec Maven..."
+mvn clean package -pl dockerfile-service -am -DskipTests
 
-# 3. Déploiement du Dockerfile Service
-echo "📦 Déploiement de dc-dockerfile-service..."
+# 3. Construction locale de l'image Docker (Dans le Cloud Shell)
+echo "🐳 Construction locale de l'image Docker..."
+docker build -t gcr.io/$PROJECT_ID/dockerfile-service ./dockerfile-service
+
+# 4. Poussée de l'image vers GCR
+echo "📤 Poussée de l'image vers GCR..."
+docker push gcr.io/$PROJECT_ID/dockerfile-service
+
+# 5. Déploiement sur Cloud Run
+echo "📦 Déploiement final sur dc-dockerfile-service..."
 gcloud run deploy dc-dockerfile-service \
     --image gcr.io/$PROJECT_ID/dockerfile-service \
     --platform managed \
@@ -39,6 +47,6 @@ gcloud run deploy dc-dockerfile-service \
 SERVICE_URL=$(gcloud run services describe dc-dockerfile-service --region $REGION --format='value(status.url)')
 
 echo "--------------------------------------------------"
-echo "🎉 DEPLOIEMENT REUSSI AVEC CLOUD BUILD !"
+echo "🎉 DEPLOIEMENT REUSSI VIA CLOUD SHELL !"
 echo "🔗 URL DU SERVICE : $SERVICE_URL"
 echo "--------------------------------------------------"
