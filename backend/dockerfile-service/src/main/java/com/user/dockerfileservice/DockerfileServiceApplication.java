@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.user.dockerfileservice", "com.platform.dockerfileservice"})
 public class DockerfileServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(DockerfileServiceApplication.class, args);
