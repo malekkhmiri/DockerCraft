@@ -17,7 +17,7 @@ gcloud run deploy dc-ollama \
     --allow-unauthenticated \
     --memory 4Gi \
     --cpu 2 \
-    --port 11434
+    --set-env-vars="OLLAMA_HOST=0.0.0.0:8080"
 
 OLLAMA_URL=$(gcloud run services describe dc-ollama --region $REGION --format='value(status.url)')
 echo "✅ Ollama prêt à : $OLLAMA_URL"
