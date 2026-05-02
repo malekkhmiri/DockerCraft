@@ -22,7 +22,7 @@ export class DockerfileService {
     formData.append('file', file);
     
     const params = `?name=${name}&language=${language}&userEmail=${email}&username=${username}`;
-    return this.http.post<UploadResponse>(`${this.projectUrl}/upload${params}`, formData);
+    return this.http.post<UploadResponse>(`${this.projectUrl}/submit${params}`, formData);
   }
 
   /**

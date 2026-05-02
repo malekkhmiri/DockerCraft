@@ -22,7 +22,7 @@ public class ProjectController {
         this.projectService = projectService;
     }
 
-    @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/submit", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Uploader un nouveau projet (ZIP)")
     public ResponseEntity<?> uploadProject(
             @RequestParam("name") String name,
