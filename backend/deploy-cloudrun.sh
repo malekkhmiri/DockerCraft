@@ -30,7 +30,7 @@ mvn clean package -pl dockerfile-service -am -DskipTests -Dmaven.test.skip=true
 # 3. Construction locale de l'image Docker (Dans le Cloud Shell)
 echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
 DOCKER_USER="malekkhmiri"
-docker build -t $DOCKER_USER/dockergeneration-dockerfile-service:latest ./dockerfile-service
+docker build --provenance=false -t $DOCKER_USER/dockergeneration-dockerfile-service:latest ./dockerfile-service
 
 # 4. Poussée de l'image vers Docker Hub
 echo "📤 Poussée de l'image vers Docker Hub ($DOCKER_USER)..."
@@ -43,8 +43,9 @@ gcloud run deploy dc-dockerfile-service \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
-    --memory 4Gi \
+    --memory 2Gi \
     --cpu 2 \
+    --cpu-boost \
     --timeout 600 \
     --set-env-vars="OLLAMA_URL=$OLLAMA_URL"
 
