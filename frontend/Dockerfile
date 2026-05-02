@@ -12,15 +12,12 @@ FROM nginx:stable
 RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/*
 
 # Copy the entire build output to a temporary location
-COPY --from=build /app/dist/frontend-platform /usr/share/nginx/html-tmp
+COPY --from=build /app/dist /usr/share/nginx/html-tmp
 
-# Move files to the final location (handling potential /browser subfolder)
-# And add a VISIBLE signature to the index.html
-RUN if [ -d "/usr/share/nginx/html-tmp/browser" ]; then \
-        mv /usr/share/nginx/html-tmp/browser/* /usr/share/nginx/html/; \
-    else \
-        mv /usr/share/nginx/html-tmp/* /usr/share/nginx/html/; \
-    fi && \
+# DYNAMIC DETECTION: Find where index.html is and move everything from that directory
+RUN REAL_ROOT=$(find /usr/share/nginx/html-tmp -name index.html -exec dirname {} \; | head -n 1) && \
+    echo "Real root found at: $REAL_ROOT" && \
+    mv $REAL_ROOT/* /usr/share/nginx/html/ && \
     rm -rf /usr/share/nginx/html-tmp && \
     sed -i 's/<body[^>]*>/<body style="border-top: 10px solid #00ff00;"> <div style="background: #00ff00; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">DOCKERCRAFT LIVE (REVISION: '$(date +%s)')<\/div>/' /usr/share/nginx/html/index.html
 
