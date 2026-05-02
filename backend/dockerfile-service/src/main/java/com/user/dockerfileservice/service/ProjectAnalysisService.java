@@ -152,13 +152,22 @@ public class ProjectAnalysisService {
 
     private String scanForApiRoute(Path root) {
         try (var walk = Files.walk(root)) {
-            return walk.filter(p -> p.toString().endsWith("Controller.java"))
+            return walk.filter(p -> p.toString().endsWith(".java"))
                        .map(p -> {
                            try {
                                String content = Files.readString(p);
-                               // Chercher @RequestMapping("/...") ou @GetMapping("/...")
-                               Matcher m = Pattern.compile("@(?:Request|Get)Mapping\\s*\\(\\s*\"([^\"]+)\"").matcher(content);
-                               if (m.find()) return m.group(1);
+                               if (content.contains("@RestController") || content.contains("@Controller")) {
+                                   // 1. Chercher le prefixe de classe
+                                   String classPath = "";
+                                   Matcher mClass = Pattern.compile("@RequestMapping\\s*\\(\\s*\"([^\"]+)\"").matcher(content);
+                                   if (mClass.find()) classPath = mClass.group(1);
+                                   
+                                   // 2. Chercher la première méthode GET
+                                   Matcher mMethod = Pattern.compile("@GetMapping\\s*\\(\\s*\"([^\"]+)\"").matcher(content);
+                                   if (mMethod.find()) return (classPath + mMethod.group(1)).replace("//", "/");
+                                   
+                                   if (!classPath.isEmpty()) return classPath;
+                               }
                                return null;
                            } catch (IOException e) { return null; }
                        })

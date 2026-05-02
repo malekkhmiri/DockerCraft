@@ -150,14 +150,14 @@ public class DockerfilePostProcessor {
 
             // Fix 5: Standardize common ENV lines
             if (trimmed.contains("SPRING_DATASOURCE_URL=") && a != null && a.getDatabaseName() != null) {
-                String dbName = a.getDatabaseName();
+                String dbName = (a.getDatabaseName() != null) ? a.getDatabaseName() : "app_db";
                 String dbType = (a.getDatabaseType() != null) ? a.getDatabaseType() : "mysql";
                 int dbPort = switch (dbType.toLowerCase()) {
                     case "mysql", "mariadb" -> 3306;
                     case "mongodb" -> 27017;
                     default -> 5432;
                 };
-                String correctUrl = "jdbc:" + dbType + "://db:" + dbPort + "/" + dbName;
+                String correctUrl = "jdbc:" + dbType + "://db:" + dbPort + "/${DB_NAME:-" + dbName + "}";
                 sb.append("    SPRING_DATASOURCE_URL=").append(correctUrl).append(" \\\n");
                 continue;
             }
