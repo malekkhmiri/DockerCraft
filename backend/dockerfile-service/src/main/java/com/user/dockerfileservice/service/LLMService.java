@@ -50,30 +50,41 @@ public class LLMService {
         this.debugLogger  = debugLogger;
     }
 
-    public String generate(AnalysisResult analysis) {
-        String systemPrompt = buildSystemPrompt(analysis);
-        
-        String javaVer   = analysis.getJavaVersion()   != null ? analysis.getJavaVersion()   : "17";
-        String framework = analysis.getFramework()     != null ? analysis.getFramework()     : "spring-boot";
-        String dbType    = analysis.getDatabaseType()    != null ? analysis.getDatabaseType()    : "none";
-        String artifact  = analysis.getArtifactName()  != null ? analysis.getArtifactName()  : "app.jar";
+    // ── API publique ───────────────────────────────────────────────────────────
 
+    public String generate(AnalysisResult raw) {
+        AnalysisResult analysis = normalize(raw);
+        String systemPrompt = buildSystemPrompt(analysis);
         logger.info("🚀 Génération pour {} — JAR: {} (Java {}, DB {}, Framework {})",
                 analysis.getArtifactId(),
-                artifact,
-                javaVer,
-                dbType,
-                framework);
-
+                analysis.getArtifactName(),
+                analysis.getJavaVersion(),
+                analysis.getDatabaseType() != null ? analysis.getDatabaseType() : "none",
+                analysis.getFramework());
         return callOllama(systemPrompt);
     }
 
-    private String buildSystemPrompt(AnalysisResult analysis) {
-        String javaVer   = analysis.getJavaVersion()   != null ? analysis.getJavaVersion()   : "17";
-        String framework = analysis.getFramework()     != null ? analysis.getFramework()     : "spring-boot";
-        String dbType    = analysis.getDatabaseType();
-        String artifact  = analysis.getArtifactName()  != null ? analysis.getArtifactName()  : "app.jar";
-        String health    = analysis.getHealthEndpoint();
+    // ── Normalisation ──────────────────────────────────────────────────────────
+
+    private AnalysisResult normalize(AnalysisResult raw) {
+        return AnalysisResult.builder()
+                .artifactId(raw.getArtifactId())
+                .artifactName(raw.getArtifactName()  != null ? raw.getArtifactName()  : "app.jar")
+                .javaVersion(raw.getJavaVersion()    != null ? raw.getJavaVersion()    : "17")
+                .framework(raw.getFramework()        != null ? raw.getFramework()      : "spring-boot")
+                .databaseType(raw.getDatabaseType())
+                .healthEndpoint(raw.getHealthEndpoint())
+                .build();
+    }
+
+    // ── Construction du prompt ─────────────────────────────────────────────────
+
+    private String buildSystemPrompt(AnalysisResult a) {
+        String javaVer   = a.getJavaVersion();
+        String framework = a.getFramework();
+        String dbType    = a.getDatabaseType();
+        String artifact  = a.getArtifactName();
+        String health    = a.getHealthEndpoint();
 
         boolean isPlain   = "java-plain".equalsIgnoreCase(framework);
         boolean hasDb     = dbType != null
@@ -122,7 +133,7 @@ public class LLMService {
             Build stage (DO NOT switch USER here — Maven needs write access):
             - FROM maven:3.9.6-eclipse-temurin-%s-alpine AS builder
             - WORKDIR /build
-            - COPY pom.xml . && RUN mvn dependency:go-offline -B
+            - COPY pom.xml . then RUN mvn dependency:go-offline -B
             - COPY src ./src
             - RUN mvn clean package -DskipTests -B
 
@@ -138,7 +149,7 @@ public class LLMService {
             """.formatted(javaVer, javaVer, artifact));
 
         if (hasDb) {
-            String jdbcUrl = switch (dbType.toLowerCase()) {
+            String jdbcUrl = dbType == null ? "jdbc:h2:mem:testdb" : switch (dbType.toLowerCase()) {
                 case "mysql"      -> "jdbc:mysql://db:3306/dbname";
                 case "postgresql" -> "jdbc:postgresql://db:5432/dbname";
                 default           -> "jdbc:h2:mem:testdb";
@@ -162,11 +173,11 @@ public class LLMService {
         if (hasHealth) {
             sb.append("""
 
-                ## Healthcheck — add exactly:
-                In the runtime stage, update the existing RUN addgroup line to include wget:
+                ## Healthcheck
+                Update the existing RUN addgroup line to include wget:
                 RUN addgroup -S spring && adduser -S spring -G spring && apk add --no-cache wget
-                
-                Then add the HEALTHCHECK instruction:
+
+                Then add:
                 HEALTHCHECK --interval=30s --timeout=10s --retries=5 \\
                   CMD wget --quiet --tries=1 --spider http://localhost:8080%s || exit 1
                 """.formatted(health));
@@ -176,6 +187,8 @@ public class LLMService {
 
         return sb.toString();
     }
+
+    // ── Appel Ollama ───────────────────────────────────────────────────────────
 
     private String callOllama(String systemPrompt) {
         debugLogger.log("Envoi requête à Ollama (" + ollamaUrl + ")");
@@ -200,16 +213,15 @@ public class LLMService {
         return ERROR_DOCKERFILE;
     }
 
+    // ── Nettoyage de la réponse ────────────────────────────────────────────────
+
     private String cleanResponse(String response) {
-        // 1. Nettoyer les blocs Markdown
         String cleaned = response.replaceAll("(?s)```(?:dockerfile|docker)?(.*?)```", "$1");
 
-        // 2. Chercher le premier FROM (début du Dockerfile)
         Matcher matcher = Pattern.compile("(?s)(FROM\\s+.+)").matcher(cleaned);
         if (!matcher.find()) return ERROR_DOCKERFILE;
 
-        // 3. Filtrer ligne par ligne (Approche positive par mots-clés Docker)
-        return Arrays.stream(matcher.group(1).split("\n"))
+        return Arrays.stream(matcher.group(1).split("\n", -1))
                 .filter(line -> {
                     String t = line.stripLeading();
                     return t.isBlank()
