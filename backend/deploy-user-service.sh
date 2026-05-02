@@ -14,19 +14,17 @@ echo "📦 Compilation du JAR avec Maven..."
 mvn clean package -pl user-service -am -DskipTests
 
 # 2. Construction locale de l'image Docker
-echo "🐳 Construction locale de l'image Docker pour GCR..."
-docker build -t gcr.io/$PROJECT_ID/dockergeneration-user-service:latest ./user-service
+echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
+docker build -t docker.io/$DOCKER_USER/dockergeneration-user-api:latest ./user-service
 
-# 3. Poussée de l'image vers Google Container Registry
-echo "📤 Configuration de l'authentification Docker pour GCR..."
-gcloud auth configure-docker -q
-echo "📤 Poussée de l'image vers GCR..."
-docker push gcr.io/$PROJECT_ID/dockergeneration-user-service:latest
+# 3. Poussée de l'image vers Docker Hub
+echo "📤 Poussée de l'image vers Docker Hub..."
+docker push docker.io/$DOCKER_USER/dockergeneration-user-api:latest
 
 # 4. Déploiement sur Cloud Run
-echo "📦 Déploiement final sur dc-user-service (via GCR)..."
+echo "📦 Déploiement final sur dc-user-service (via Docker Hub)..."
 gcloud run deploy dc-user-service \
-    --image gcr.io/$PROJECT_ID/dockergeneration-user-service:latest \
+    --image docker.io/$DOCKER_USER/dockergeneration-user-api:latest \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
