@@ -24,16 +24,25 @@ public class ProjectController {
 
     @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Uploader un nouveau projet (ZIP)")
-    public ResponseEntity<ProjectResponse> uploadProject(
+    public ResponseEntity<?> uploadProject(
             @RequestParam("name") String name,
             @RequestParam("language") String language,
             @RequestParam("userEmail") String userEmail,
             @RequestParam("username") String username,
             @RequestPart("file") MultipartFile file) {
-        System.out.println(">>> REQUEST RECEIVED: /api/projects/upload for " + name);
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            projectService.uploadProject(name, language, userEmail, username, file)
-        );
+        try {
+            System.out.println(">>> REQUEST RECEIVED: /api/projects/upload for " + name);
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("ERREUR : Le fichier ZIP est vide !");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                projectService.uploadProject(name, language, userEmail, username, file)
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("ERREUR UPLOAD : " + e.getMessage() + " (Cause: " + (e.getCause() != null ? e.getCause().getMessage() : "N/A") + ")");
+        }
     }
 
     @GetMapping

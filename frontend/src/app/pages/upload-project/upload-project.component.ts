@@ -111,10 +111,15 @@ export class UploadProjectComponent implements OnInit {
       },
       error: (err) => {
         this.isUploading = false;
+        console.error('Upload error:', err);
         if (err.status === 429) {
           this.errorMessage = 'Quota exceeded, please upgrade.';
         } else if (err.status === 413) {
           this.errorMessage = 'File too large.';
+        } else if (err.error && typeof err.error === 'string') {
+          this.errorMessage = err.error;
+        } else if (err.message) {
+          this.errorMessage = 'Error: ' + err.message;
         } else {
           this.errorMessage = 'Server error, please try again later.';
         }
