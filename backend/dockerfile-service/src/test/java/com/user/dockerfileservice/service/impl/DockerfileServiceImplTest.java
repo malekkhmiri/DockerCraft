@@ -1,6 +1,5 @@
 package com.user.dockerfileservice.service.impl;
 
-import com.user.dockerfileservice.config.RabbitMQConfig;
 import com.user.dockerfileservice.entity.Dockerfile;
 import com.user.dockerfileservice.repository.DockerfileRepository;
 import com.user.dockerfileservice.service.LLMService;
@@ -17,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -51,9 +49,6 @@ class DockerfileServiceImplTest {
 
     @Mock
     private LanguageStrategy languageStrategy;
-
-    @Mock
-    private RabbitTemplate rabbitTemplate;
 
     @Mock
     private RestTemplate restTemplate;
@@ -96,11 +91,6 @@ class DockerfileServiceImplTest {
 
         // Assert
         verify(repository).save(any(Dockerfile.class));
-        verify(rabbitTemplate).convertAndSend(
-                eq(RabbitMQConfig.PROJECT_EXCHANGE),
-                eq(RabbitMQConfig.DOCKERFILE_READY_ROUTING_KEY),
-                eq(projectId)
-        );
     }
 
     @Test
