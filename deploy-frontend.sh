@@ -8,18 +8,21 @@ DOCKER_USER="malekkhmiri"
 
 echo "🚀 Déploiement du Frontend via LOCAL BUILD (Cloud Shell)..."
 
-# 1. Construction locale de l'image Docker
-echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
-docker build --no-cache -t docker.io/$DOCKER_USER/dockergeneration-frontend:latest ./frontend
+# 1. Construction locale de l'image Docker avec un TAG UNIQUE
+TAG=$(date +%s)
+IMAGE_NAME="docker.io/$DOCKER_USER/dockergeneration-frontend:$TAG"
+
+echo "🐳 Construction de l'image $IMAGE_NAME..."
+docker build --no-cache -t $IMAGE_NAME ./frontend
 
 # 2. Poussée de l'image vers Docker Hub
 echo "📤 Poussée de l'image vers Docker Hub..."
-docker push docker.io/$DOCKER_USER/dockergeneration-frontend:latest
+docker push $IMAGE_NAME
 
-# 3. Déploiement sur Cloud Run
-echo "📦 Déploiement final sur dc-frontend (via Docker Hub)..."
+# 3. Déploiement sur Cloud Run avec l'image spécifique
+echo "📦 Déploiement final sur dc-frontend (Tag: $TAG)..."
 gcloud run deploy dc-frontend \
-    --image docker.io/$DOCKER_USER/dockergeneration-frontend:latest \
+    --image $IMAGE_NAME \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
