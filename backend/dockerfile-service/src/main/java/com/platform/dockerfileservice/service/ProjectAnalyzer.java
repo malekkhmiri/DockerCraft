@@ -8,10 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -28,77 +28,106 @@ public class ProjectAnalyzer {
      */
     public ProjectContext analyze(Path projectRoot) {
         ProjectContext.ProjectContextBuilder builder = ProjectContext.builder();
+        
+        // Les conteneurs ciblent toujours Linux — évite les faux positifs des fichiers .bat/.cmd
+        builder.targetOS(ProjectContext.TargetOS.LINUX);
 
-        detectLanguageAndVersion(projectRoot, builder);
-        detectOS(projectRoot, builder);
+        detectLanguageAndBuildInfo(projectRoot, builder);
         detectPort(projectRoot, builder);
-        listFilesToCopy(projectRoot, builder);
 
         return builder.build();
     }
 
-    private void detectLanguageAndVersion(Path projectRoot, ProjectContext.ProjectContextBuilder builder) {
-        if (Files.exists(projectRoot.resolve("pom.xml"))) {
-            builder.language("java");
-            builder.buildTool("maven");
+    private void detectLanguageAndBuildInfo(Path projectRoot,
+                                             ProjectContext.ProjectContextBuilder builder) {
+        Path pom = projectRoot.resolve("pom.xml");
+        if (Files.exists(pom)) {
             try {
-                String content = Files.readString(projectRoot.resolve("pom.xml"));
-                Pattern pattern = Pattern.compile("<java\\.version>(.*?)</java\\.version>");
-                Matcher matcher = pattern.matcher(content);
-                if (matcher.find()) {
-                    builder.version(matcher.group(1));
-                } else {
-                    builder.version("17"); // Default
-                }
+                String content = Files.readString(pom);
+                builder.language("java")
+                       .buildTool("maven")
+                       .framework(detectFramework(content))
+                       .databaseType(detectDatabase(content))
+                       .version(detectJavaVersion(content));
+
+                detectHealthEndpoint(projectRoot)
+                        .ifPresent(builder::healthEndpoint);
+
             } catch (IOException e) {
-                builder.version("17");
+                builder.language("java").buildTool("maven")
+                       .framework("java-plain").version("17");
             }
         } else if (Files.exists(projectRoot.resolve("requirements.txt"))) {
-            builder.language("python");
-            builder.version("3.9"); // Default for python
+            builder.language("python").version("3.9");
         } else if (Files.exists(projectRoot.resolve("package.json"))) {
-            builder.language("nodejs");
-            builder.version("18"); // Default for node
+            builder.language("nodejs").version("18");
         } else if (Files.exists(projectRoot.resolve("go.mod"))) {
-            builder.language("go");
-            builder.version("1.21"); // Default for go
+            builder.language("go").version("1.21");
         }
     }
 
-    private void detectOS(Path projectRoot, ProjectContext.ProjectContextBuilder builder) {
-        try (Stream<Path> stream = Files.list(projectRoot)) {
-            boolean hasWindowsFiles = stream.anyMatch(path -> {
-                String name = path.getFileName().toString().toLowerCase();
-                return name.endsWith(".bat") || name.endsWith(".ps1") || name.endsWith(".cmd");
-            });
-            builder.targetOS(hasWindowsFiles ? ProjectContext.TargetOS.WINDOWS : ProjectContext.TargetOS.LINUX);
-        } catch (IOException e) {
-            builder.targetOS(ProjectContext.TargetOS.LINUX);
-        }
+    private String detectJavaVersion(String pomContent) {
+        Matcher m = Pattern.compile("<java\\.version>(.*?)</java\\.version>").matcher(pomContent);
+        return m.find() ? m.group(1) : "17";
+    }
+
+    private String detectFramework(String pomContent) {
+        if (pomContent.contains("spring-boot-starter")) return "spring-boot";
+        if (pomContent.contains("quarkus-universe"))    return "quarkus";
+        return "java-plain";
+    }
+
+    private String detectDatabase(String pomContent) {
+        if (pomContent.contains("mysql-connector"))  return "mysql";
+        if (pomContent.contains("postgresql"))       return "postgresql";
+        if (pomContent.contains("com.h2database"))   return "h2";
+        return null;
     }
 
     private void detectPort(Path projectRoot, ProjectContext.ProjectContextBuilder builder) {
-        Path propsPath = projectRoot.resolve("src/main/resources/application.properties");
-        if (Files.exists(propsPath)) {
-            try {
-                Properties props = new Properties();
-                props.load(Files.newInputStream(propsPath));
-                String port = props.getProperty("server.port", "8080");
-                builder.port(Integer.parseInt(port));
-                return;
-            } catch (IOException | NumberFormatException ignored) {}
-        }
-        builder.port(8080);
+        // Essaye application.properties puis application-prod.properties
+        int port = readPortFromProperties(
+                    projectRoot.resolve("src/main/resources/application.properties"))
+                .orElseGet(() -> readPortFromProperties(
+                    projectRoot.resolve("src/main/resources/application-prod.properties"))
+                .orElse(8080));
+        builder.port(port);
     }
 
-    private void listFilesToCopy(Path projectRoot, ProjectContext.ProjectContextBuilder builder) {
-        List<String> files = new ArrayList<>();
-        try (Stream<Path> stream = Files.list(projectRoot)) {
-            files = stream.filter(path -> !Files.isDirectory(path))
-                    .map(path -> path.getFileName().toString())
-                    .filter(name -> name.endsWith(".py") || name.endsWith(".java") || name.endsWith(".js") || name.endsWith(".sh"))
-                    .collect(Collectors.toList());
-        } catch (IOException ignored) {}
-        builder.filesToCopy(files);
+    private Optional<Integer> readPortFromProperties(Path path) {
+        if (!Files.exists(path)) return Optional.empty();
+        try (var is = Files.newInputStream(path)) {
+            Properties props = new Properties();
+            props.load(is);
+            String portStr = props.getProperty("server.port", "8080");
+            return Optional.of(Integer.parseInt(portStr));
+        } catch (IOException | NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<String> detectHealthEndpoint(Path projectRoot) {
+        Path srcRoot = projectRoot.resolve("src/main/java");
+        if (!Files.exists(srcRoot)) return Optional.empty();
+        try (Stream<Path> stream = Files.walk(srcRoot)) {
+            return stream
+                .filter(p -> p.toString().endsWith(".java"))
+                .map(p -> { 
+                    try { return Files.readString(p); }
+                    catch (IOException e) { return ""; } 
+                })
+                .flatMap(content -> extractGetRoutes(content).stream())
+                .filter(route -> !route.contains("{")) // Exclure les PathVariables
+                .findFirst();
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+    }
+
+    private List<String> extractGetRoutes(String content) {
+        List<String> routes = new ArrayList<>();
+        Matcher m = Pattern.compile("@GetMapping\\(\"([^\"]+)\"\\)").matcher(content);
+        while (m.find()) routes.add(m.group(1));
+        return routes;
     }
 }

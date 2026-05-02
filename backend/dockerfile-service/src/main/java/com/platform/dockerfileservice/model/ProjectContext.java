@@ -19,6 +19,9 @@ public class ProjectContext {
     private String language;
     private String version;
     private String buildTool;
+    private String framework;
+    private String databaseType;
+    private String healthEndpoint;
     private TargetOS targetOS;
     private int port;
     private List<String> filesToCopy;
