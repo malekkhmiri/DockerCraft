@@ -77,20 +77,6 @@ public class DockerfileGenerationService {
         return fallback;
     }
 
-    /** Legacy bridge (unused if calling generate(AnalysisResult) directly) */
-    public String generate(ProjectContext context) {
-        return generate(bridgeToAnalysisResult(context));
-    }
-
-    private AnalysisResult bridgeToAnalysisResult(ProjectContext ctx) {
-        return AnalysisResult.builder()
-                .language(ctx.getLanguage())
-                .javaVersion(ctx.getVersion())
-                .buildTool(ctx.getBuildTool())
-                .port(ctx.getPort())
-                .hasActuator(ctx.isHasActuator())
-                .build();
-    }
 
     private String enrichPromptWithKnowledge(String prompt, List<DockerfileKnowledge> ok, List<DockerfileKnowledge> fail) {
         StringBuilder sb = new StringBuilder(prompt);
