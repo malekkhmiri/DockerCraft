@@ -1,4 +1,4 @@
-package com.platform.dockerfileservice.service;
+package com.user.dockerfileservice.service;
 
 import com.user.dockerfileservice.dto.AnalysisResult;
 import org.springframework.stereotype.Service;
@@ -73,14 +73,4 @@ public class FallbackTemplateService {
         return sb.toString();
     }
 
-    /** Legacy bridge */
-    public String generate(com.platform.dockerfileservice.model.ProjectContext ctx) {
-        return generateFallback(AnalysisResult.builder()
-                .language(ctx.getLanguage())
-                .javaVersion(ctx.getVersion())
-                .buildTool(ctx.getBuildTool())
-                .port(ctx.getPort())
-                .hasActuator(ctx.isHasActuator())
-                .build());
-    }
 }

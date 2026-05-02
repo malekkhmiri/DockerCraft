@@ -1,7 +1,7 @@
-package com.platform.dockerfileservice.controller;
+package com.user.dockerfileservice.controller;
 
-import com.platform.dockerfileservice.model.DockerfileKnowledge;
-import com.platform.dockerfileservice.repository.KnowledgeRepository;
+import com.user.dockerfileservice.entity.DockerfileKnowledge;
+import com.user.dockerfileservice.repository.KnowledgeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

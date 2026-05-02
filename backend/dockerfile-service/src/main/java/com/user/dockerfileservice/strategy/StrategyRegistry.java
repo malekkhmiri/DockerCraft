@@ -18,13 +18,6 @@ public class StrategyRegistry {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No strategy for " + language));
     }
-
-    public LanguageStrategy find(String language, com.platform.dockerfileservice.model.ProjectContext.TargetOS os) {
-        return strategies.stream()
-                .filter(s -> s.getSupportedLanguage().equalsIgnoreCase(language) && s.supportsOS(os))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No strategy for " + language + " on " + os));
-    }
 }
 
 

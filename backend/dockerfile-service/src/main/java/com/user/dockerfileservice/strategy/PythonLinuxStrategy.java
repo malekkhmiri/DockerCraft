@@ -1,4 +1,4 @@
-package com.platform.dockerfileservice.strategy;
+package com.user.dockerfileservice.strategy;
 
 import com.user.dockerfileservice.dto.AnalysisResult;
 import org.springframework.stereotype.Component;
