@@ -29,6 +29,8 @@ public class Dockerfile {
     @Column(nullable = false)
     private boolean isValidated;
 
+    private String generationMethod; // "AI" or "FALLBACK"
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

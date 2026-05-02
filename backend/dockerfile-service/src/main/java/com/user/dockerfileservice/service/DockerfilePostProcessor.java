@@ -31,11 +31,11 @@ public class DockerfilePostProcessor {
 
         if (isValid(fixed, analysis)) {
             logger.info("✅ Dockerfile validé (Généré par l'IA)");
-            return fixed;
+            return "# METHOD: AI\n" + fixed;
         }
         
         logger.warn("⚠️ Échec de validation du Dockerfile IA. Utilisation du FALLBACK de sécurité.");
-        return buildFallback(analysis);
+        return "# METHOD: FALLBACK\n" + buildFallback(analysis);
     }
 
     // ── Layer 1: Clean markdown artefacts ──────────────────────────────

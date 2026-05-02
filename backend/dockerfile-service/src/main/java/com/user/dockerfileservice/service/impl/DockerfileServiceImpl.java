@@ -99,12 +99,18 @@ public class DockerfileServiceImpl implements DockerfileService {
             // 4 & 5. Génération & Post-processing
             String content = generate(analysis);
             boolean isValid = validatorService.validate(content, analysis);
+            
+            String method = "AI";
+            if (content.startsWith("# METHOD: FALLBACK")) {
+                method = "FALLBACK";
+            }
 
             // 6. Sauvegarde & Notification
             Dockerfile dockerfile = Dockerfile.builder()
                     .projectId(projectId)
                     .content(content)
                     .isValidated(isValid)
+                    .generationMethod(method)
                     .build();
             
             repository.save(dockerfile);
