@@ -25,8 +25,7 @@ gcloud run deploy dc-frontend \
     --allow-unauthenticated \
     --memory 1Gi \
     --cpu 1 \
-    --timeout 300 \
-    --set-env-vars="PORT=8080"
+    --timeout 300
 
 SERVICE_URL=$(gcloud run services describe dc-frontend --region $REGION --format='value(status.url)')
 
