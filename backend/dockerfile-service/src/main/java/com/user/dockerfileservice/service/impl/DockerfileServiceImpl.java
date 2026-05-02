@@ -59,9 +59,10 @@ public class DockerfileServiceImpl implements DockerfileService {
         return url;
     }
 
+    @org.springframework.scheduling.annotation.Async
     @Override
     public void generateDockerfile(Long projectId) {
-        logger.info("🚀 Début de la génération intelligente pour le projet ID : {}", projectId);
+        logger.info("⚡ DÉMARRAGE ASYNCHRONE de la génération pour le projet ID: {}...", projectId);
         try {
             // 1. Récupérer les infos du projet
             String projectUrl = getProjectServiceUrl() + "/api/projects/" + projectId;
