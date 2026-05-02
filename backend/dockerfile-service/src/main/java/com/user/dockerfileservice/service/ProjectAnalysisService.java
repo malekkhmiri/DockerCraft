@@ -190,7 +190,8 @@ public class ProjectAnalysisService {
             String v = getXmlTag(pom, tag);
             if (v != null) return v;
         }
-        return "17";
+        // Fallback to highest detected if possible, otherwise default to 21 or 24 if pom mentions it
+        return "21"; // Default to a stable modern LTS
     }
 
     private List<String> detectExtraEnvVars(String props) {

@@ -28,17 +28,24 @@ public class LLMService {
     }
 
     public String generate(AnalysisResult analysis, String prompt) {
-        String systemPrompt = "You are a Senior DevOps Engineer. Generate a custom, production-ready, multi-stage Dockerfile.\n" +
-                "STRICT RULES:\n" +
-                "1. ARTIFACT NAME: The JAR file is named '" + analysis.getArtifactName() + "'. Use this specific name, NOT 'app.jar'.\n" +
-                "2. HEALTHCHECK: " + (analysis.isHasActuator() ? "Use '/actuator/health' as the project HAS Spring Boot Actuator." : "DO NOT use '/actuator/health'. Use '" + (analysis.getHealthEndpoint() != null ? analysis.getHealthEndpoint() : "/") + "' or a TCP check instead.") + "\n" +
-                "3. ENVIRONMENT: Include ENV variables for: " + (analysis.getDatabaseType() != null ? "Database (" + analysis.getDatabaseType() + "), " : "") + "Port (" + analysis.getPort() + ").\n" +
-                "4. SECURITY: Use a non-root user (e.g., 'spring').\n" +
-                "5. OPTIMIZATION: Multi-stage build is mandatory. Clean up cache.\n" +
-                "6. .DOCKERIGNORE: Also suggest a small .dockerignore content at the end of the response inside a comment block.\n" +
-                "Return ONLY the Dockerfile content, then the .dockerignore inside a comment block. No conversational text.\n\n";
+        String dbType = analysis.getDatabaseType() != null ? analysis.getDatabaseType() : "H2 (no external DB)";
+        String javaVer = analysis.getJavaVersion();
         
-        logger.info("Appel d'Ollama ({}) avec le modèle : {} pour le projet : {}", ollamaUrl, modelName, analysis.getArtifactId());
+        String systemPrompt = "You are an Elite DevOps Engineer. Task: Generate a CUSTOM Dockerfile for this SPECIFIC project.\n" +
+                "FACTS FOR THIS PROJECT (DO NOT HALLUCINATE):\n" +
+                "- TECHNOLOGY: Java " + javaVer + " (use eclipse-temurin:" + javaVer + " as base)\n" +
+                "- DATABASE: " + dbType + " (DO NOT add PostgreSQL/libpq if using MySQL)\n" +
+                "- ARTIFACT: " + analysis.getArtifactName() + "\n" +
+                "- HEALTHCHECK: " + (analysis.isHasActuator() ? "/actuator/health" : (analysis.getHealthEndpoint() != null ? analysis.getHealthEndpoint() : "/")) + "\n\n" +
+                "STRICT INSTRUCTIONS:\n" +
+                "1. If project uses MySQL, DO NOT install libpq or postgresql-client.\n" +
+                "2. Match the Java version EXACTLY (" + javaVer + ").\n" +
+                "3. Use multi-stage build (maven:3.9-eclipse-temurin-" + javaVer + " as builder).\n" +
+                "4. Use a non-root user 'devops'.\n" +
+                "5. Ignore previous examples if they use different Java versions or DB types.\n" +
+                "Return ONLY the Dockerfile code, then the .dockerignore inside a comment.\n";
+        
+        logger.info("🚀 Génération ELITE pour {} (Java {}, DB {})", analysis.getArtifactId(), javaVer, dbType);
         
         Map<String, Object> request = Map.of(
             "model", modelName,
