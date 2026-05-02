@@ -10,7 +10,7 @@ echo "🚀 Déploiement de DockerCraft via LOCAL BUILD (Cloud Shell)..."
 
 # 1. Déploiement de Ollama (IA)
 echo "🤖 Construction et déploiement de dc-ollama avec le modèle intégré..."
-gcloud builds submit --tag gcr.io/$PROJECT_ID/dc-ollama -f Dockerfile.ollama .
+gcloud builds submit --tag gcr.io/$PROJECT_ID/dc-ollama --dockerfile Dockerfile.ollama .
 
 gcloud run deploy dc-ollama \
     --image gcr.io/$PROJECT_ID/dc-ollama \
