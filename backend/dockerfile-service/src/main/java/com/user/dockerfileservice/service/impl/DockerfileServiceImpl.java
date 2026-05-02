@@ -51,12 +51,20 @@ public class DockerfileServiceImpl implements DockerfileService {
         this.restTemplate = restTemplate;
     }
 
+    private String getProjectServiceUrl() {
+        String url = System.getenv("PROJECT_SERVICE_URL");
+        if (url == null || url.isEmpty()) {
+            return "https://dc-project-service-715286351060.us-central1.run.app";
+        }
+        return url;
+    }
+
     @Override
     public void generateDockerfile(Long projectId) {
         logger.info("🚀 Début de la génération intelligente pour le projet ID : {}", projectId);
         try {
-            // 1. Récupérer les infos du projet (via hostname direct dc-project-service:8082)
-            String projectUrl = "http://dc-project-service:8082/api/projects/" + projectId;
+            // 1. Récupérer les infos du projet
+            String projectUrl = getProjectServiceUrl() + "/api/projects/" + projectId;
             ProjectResponse project = restTemplate.getForObject(projectUrl, ProjectResponse.class);
             
             if (project == null || project.getArchivePath() == null) {
@@ -65,7 +73,6 @@ public class DockerfileServiceImpl implements DockerfileService {
             }
 
             // 2. Vérifier Quota (Désactivé pour l'unification Pro)
-            // if (!checkAndConsumeQuota(project.getUserEmail())) return;
             logger.info("ℹ️ Quota ignoré (Mode illimité activé)");
 
             // 3. Analyse & Détection
@@ -86,7 +93,6 @@ public class DockerfileServiceImpl implements DockerfileService {
             
             if (isValid) {
                 logger.info("✅ Dockerfile généré et validé pour le projet #{}", projectId);
-                // Mise à jour directe du statut du projet (Pipeline supprimé)
                 updateProjectStatus(projectId, "SUCCESS");
             } else {
                 logger.error("❌ Impossible de générer un Dockerfile valide après plusieurs tentatives.");
@@ -108,7 +114,7 @@ public class DockerfileServiceImpl implements DockerfileService {
 
     private void updateProjectStatus(Long projectId, String status) {
         try {
-            String url = "http://dc-project-service:8082/api/projects/" + projectId + "/status?status=" + status;
+            String url = getProjectServiceUrl() + "/api/projects/" + projectId + "/status?status=" + status;
             restTemplate.postForEntity(url, null, Void.class);
         } catch (Exception e) {
             logger.error("Erreur lors de la mise à jour du statut pour le projet #{}", projectId, e);

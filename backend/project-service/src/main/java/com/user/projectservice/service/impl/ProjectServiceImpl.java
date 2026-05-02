@@ -28,7 +28,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     // private final RabbitTemplate rabbitTemplate;
 
-    @Value("${project.upload.dir:uploads}")
+    @Value("${project.upload.dir:/tmp/uploads}")
     private String uploadDir;
 
     public ProjectServiceImpl(ProjectRepository projectRepository) {
