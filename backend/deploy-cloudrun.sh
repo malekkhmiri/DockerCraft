@@ -25,17 +25,18 @@ echo "📦 Compilation du JAR avec Maven..."
 mvn clean package -pl dockerfile-service -am -DskipTests
 
 # 3. Construction locale de l'image Docker (Dans le Cloud Shell)
-echo "🐳 Construction locale de l'image Docker..."
-docker build -t gcr.io/$PROJECT_ID/dockerfile-service ./dockerfile-service
+echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
+DOCKER_USER="malekkhmiri"
+docker build -t $DOCKER_USER/dockergeneration-dockerfile-service:latest ./dockerfile-service
 
-# 4. Poussée de l'image vers GCR
-echo "📤 Poussée de l'image vers GCR..."
-docker push gcr.io/$PROJECT_ID/dockerfile-service
+# 4. Poussée de l'image vers Docker Hub
+echo "📤 Poussée de l'image vers Docker Hub ($DOCKER_USER)..."
+docker push $DOCKER_USER/dockergeneration-dockerfile-service:latest
 
 # 5. Déploiement sur Cloud Run
-echo "📦 Déploiement final sur dc-dockerfile-service..."
+echo "📦 Déploiement final sur dc-dockerfile-service (via Docker Hub)..."
 gcloud run deploy dc-dockerfile-service \
-    --image gcr.io/$PROJECT_ID/dockerfile-service \
+    --image docker.io/$DOCKER_USER/dockergeneration-dockerfile-service:latest \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
