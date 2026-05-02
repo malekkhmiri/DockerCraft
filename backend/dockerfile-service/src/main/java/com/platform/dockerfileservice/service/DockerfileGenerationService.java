@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class DockerfileGenerationService {
 
@@ -24,6 +23,20 @@ public class DockerfileGenerationService {
     private final FallbackTemplateService fallbackTemplateService;
     private final ValidatorService validatorService;
     private final com.user.dockerfileservice.service.DockerfilePostProcessor postProcessor;
+
+    public DockerfileGenerationService(StrategyRegistry strategyRegistry,
+                                     @org.springframework.context.annotation.Lazy LLMService llmService,
+                                     KnowledgeRepository knowledgeRepository,
+                                     FallbackTemplateService fallbackTemplateService,
+                                     ValidatorService validatorService,
+                                     com.user.dockerfileservice.service.DockerfilePostProcessor postProcessor) {
+        this.strategyRegistry = strategyRegistry;
+        this.llmService = llmService;
+        this.knowledgeRepository = knowledgeRepository;
+        this.fallbackTemplateService = fallbackTemplateService;
+        this.validatorService = validatorService;
+        this.postProcessor = postProcessor;
+    }
 
     /**
      * Generation entry point using full AnalysisResult.

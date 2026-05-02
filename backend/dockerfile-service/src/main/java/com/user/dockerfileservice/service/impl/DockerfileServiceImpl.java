@@ -23,20 +23,24 @@ public class DockerfileServiceImpl implements DockerfileService {
 
     private static final Logger logger = LoggerFactory.getLogger(DockerfileServiceImpl.class);
     private final DockerfileRepository repository;
+    @org.springframework.context.annotation.Lazy
     private final LLMService llmService;
     private final ProjectAnalysisService analysisService;
+    @org.springframework.context.annotation.Lazy
     private final ValidatorService validatorService;
+    @org.springframework.context.annotation.Lazy
     private final DockerfilePostProcessor postProcessor;
+    @org.springframework.context.annotation.Lazy
     private final com.platform.dockerfileservice.service.DockerfileGenerationService intelligentGenerationService;
     private final org.springframework.web.client.RestTemplate restTemplate;
 
-    public DockerfileServiceImpl(DockerfileRepository repository,
-            LLMService llmService,
-            ProjectAnalysisService analysisService,
-            ValidatorService validatorService,
-            DockerfilePostProcessor postProcessor,
-            com.platform.dockerfileservice.service.DockerfileGenerationService intelligentGenerationService,
-            @org.springframework.beans.factory.annotation.Qualifier("externalRestTemplate") org.springframework.web.client.RestTemplate restTemplate) {
+    public DockerfileServiceImpl(@org.springframework.context.annotation.Lazy DockerfileRepository repository,
+            @org.springframework.context.annotation.Lazy LLMService llmService,
+            @org.springframework.context.annotation.Lazy ProjectAnalysisService analysisService,
+            @org.springframework.context.annotation.Lazy ValidatorService validatorService,
+            @org.springframework.context.annotation.Lazy DockerfilePostProcessor postProcessor,
+            @org.springframework.context.annotation.Lazy com.platform.dockerfileservice.service.DockerfileGenerationService intelligentGenerationService,
+            @org.springframework.beans.factory.annotation.Qualifier("externalRestTemplate") @org.springframework.context.annotation.Lazy org.springframework.web.client.RestTemplate restTemplate) {
         this.repository = repository;
         this.llmService = llmService;
         this.analysisService = analysisService;

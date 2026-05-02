@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY target/dockerfile-service-*.jar app.jar
-ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Djava.security.egd=file:/dev/./urandom -jar app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
