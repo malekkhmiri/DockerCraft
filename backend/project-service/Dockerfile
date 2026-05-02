@@ -1,5 +1,4 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
-COPY target/*-SNAPSHOT.jar app.jar
-EXPOSE 9015
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY target/project-service-*.jar app.jar
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Djava.security.egd=file:/dev/./urandom -jar app.jar"]

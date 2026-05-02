@@ -7,7 +7,7 @@ import com.user.projectservice.entity.ProjectStatus;
 import com.user.projectservice.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
+// import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,7 +20,7 @@ public class PipelineEventListener {
         this.projectRepository = projectRepository;
     }
 
-    @RabbitListener(queues = RabbitMQConfig.PIPELINE_FINISHED_PROJECT_QUEUE)
+    // @RabbitListener(queues = RabbitMQConfig.PIPELINE_FINISHED_PROJECT_QUEUE)
     public void handlePipelineFinished(PipelineFinishedEvent event) {
         logger.info("Réception de la fin du pipeline pour le projet ID : {}, Statut : {}, Durée : {}", 
                 event.getProjectId(), event.getStatus(), event.getExecutionTime());

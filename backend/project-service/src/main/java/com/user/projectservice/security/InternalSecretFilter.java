@@ -26,7 +26,7 @@ public class InternalSecretFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         
         String path = request.getRequestURI();
-        if (path.contains("/swagger-ui") || path.contains("/v3/api-docs") || path.contains("/api-docs")) {
+        if (path.contains("/swagger-ui") || path.contains("/v3/api-docs") || path.contains("/api-docs") || path.equals("/health") || path.equals("/")) {
             filterChain.doFilter(request, response);
             return;
         }

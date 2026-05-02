@@ -9,7 +9,7 @@ import com.user.projectservice.repository.ProjectRepository;
 import com.user.projectservice.service.ProjectService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+// import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,14 +26,13 @@ public class ProjectServiceImpl implements ProjectService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProjectServiceImpl.class);
     private final ProjectRepository projectRepository;
-    private final RabbitTemplate rabbitTemplate;
+    // private final RabbitTemplate rabbitTemplate;
 
     @Value("${project.upload.dir:uploads}")
     private String uploadDir;
 
-    public ProjectServiceImpl(ProjectRepository projectRepository, RabbitTemplate rabbitTemplate) {
+    public ProjectServiceImpl(ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
-        this.rabbitTemplate = rabbitTemplate;
     }
 
     @Override
@@ -73,11 +72,8 @@ public class ProjectServiceImpl implements ProjectService {
                     .language(savedProject.getLanguage() != null ? savedProject.getLanguage().name() : null)
                     .build();
 
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.PROJECT_EXCHANGE,
-                    RabbitMQConfig.PROJECT_UPLOADED_ROUTING_KEY,
-                    event
-            );
+            // Logique RabbitMQ désactivée
+            logger.info("Message RabbitMQ simulé (Désactivé) pour le projet: {}", event.getName());
 
             return mapToResponse(savedProject);
         } catch (IOException e) {
