@@ -38,14 +38,18 @@ public class ProjectAnalyzer {
         if (Files.exists(pom)) {
             try {
                 String content = Files.readString(pom);
+                boolean multiModule = content.contains("<modules>") && content.contains("<packaging>pom</packaging>");
+                
                 builder.language("java")
                        .buildTool("maven")
-                       .framework(detectFramework(content))
+                       .framework(multiModule ? "multi-module" : detectFramework(content))
                        .databaseType(detectDatabase(content))
                        .version(detectJavaVersion(content))
                        .artifactName(detectArtifactName(content));
 
-                detectHealthEndpoint(projectRoot).ifPresent(builder::healthEndpoint);
+                if (!multiModule) {
+                    detectHealthEndpoint(projectRoot).ifPresent(builder::healthEndpoint);
+                }
 
             } catch (IOException e) {
                 builder.language("java").buildTool("maven")

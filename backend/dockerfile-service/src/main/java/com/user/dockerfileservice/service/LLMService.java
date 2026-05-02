@@ -109,7 +109,17 @@ public class LLMService {
           .append("- JAR name  : ").append(artifact).append("\n")
           .append("- Health URL: ").append(hasHealth ? health : "none").append("\n\n");
 
+        if ("multi-module".equalsIgnoreCase(framework)) {
+            return """
+                # ERROR: Multi-module Maven project detected.
+                # This project contains multiple deployable sub-modules.
+                # Please select the specific module to dockerize (e.g., mall-admin, mall-portal).
+                # Current system generates Dockerfiles for single-artifact projects only.
+                """;
+        }
+
         if (isPlain) {
+            String jarBaseName = artifact.replace(".jar", "");
             sb.append("""
                 ## CASE: java-plain (console app — NO web server)
                 STRICT rules:
@@ -132,19 +142,23 @@ public class LLMService {
 
         sb.append("""
             ## CASE: Spring Boot
-            Build stage (DO NOT switch USER here — Maven needs write access):
+            Build stage rules (STRICT):
             - FROM maven:3.9.6-eclipse-temurin-%s-alpine AS builder
             - WORKDIR /build
-            - COPY pom.xml . then RUN mvn dependency:go-offline -B
+            - COPY pom.xml .
+            - RUN mvn dependency:go-offline -B
             - COPY src ./src
             - RUN mvn clean package -DskipTests -B
+            - DO NOT CHAIN 'COPY src ./src' with any RUN command using '&&'.
 
-            Runtime stage:
+            Runtime stage rules (STRICT):
             - FROM eclipse-temurin:%s-jre-alpine AS runtime
             - RUN addgroup -S spring && adduser -S spring -G spring
             - USER spring:spring
             - WORKDIR /app
-            - ENV SPRING_PROFILES_ACTIVE=prod JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+            - Use the 'ENV' keyword for every variable declaration.
+            - ENV SPRING_PROFILES_ACTIVE=prod \\
+                  JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
             - COPY --from=builder --chown=spring:spring /build/target/%s app.jar
             - EXPOSE 8080
             - ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
