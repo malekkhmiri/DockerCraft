@@ -12,18 +12,21 @@ echo "🚀 Déploiement de Project Service via LOCAL BUILD (Cloud Shell)..."
 echo "📦 Compilation du JAR avec Maven..."
 mvn clean package -pl project-service -am -DskipTests
 
-# 2. Construction locale de l'image Docker
-echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
-docker build -t docker.io/$DOCKER_USER/dockergeneration-project-api:latest ./project-service
+# 1. Construction locale de l'image Docker avec un TAG UNIQUE
+TAG=$(date +%s)
+IMAGE_NAME="docker.io/$DOCKER_USER/dockergeneration-project-api:$TAG"
 
-# 3. Poussée de l'image vers Docker Hub
+echo "🐳 Construction locale de l'image Docker : $IMAGE_NAME..."
+docker build --provenance=false -t $IMAGE_NAME ./project-service
+
+# 2. Poussée de l'image vers Docker Hub
 echo "📤 Poussée de l'image vers Docker Hub..."
-docker push docker.io/$DOCKER_USER/dockergeneration-project-api:latest
+docker push $IMAGE_NAME
 
-# 4. Déploiement sur Cloud Run
-echo "📦 Déploiement final sur dc-project-service (via Docker Hub)..."
+# 3. Déploiement sur Cloud Run
+echo "📦 Déploiement final sur dc-project-service (Tag: $TAG)..."
 gcloud run deploy dc-project-service \
-    --image docker.io/$DOCKER_USER/dockergeneration-project-api:latest \
+    --image $IMAGE_NAME \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
