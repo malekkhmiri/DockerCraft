@@ -73,14 +73,15 @@ public class LLMService {
     }
 
     private String callOllama(String systemPrompt, String prompt) {
-        Map<String, Object> request = Map.of(
-                "model", modelName,
-                "system", systemPrompt,
-                "prompt", prompt,
-                "stream", false
-        );
-        com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("📡 Envoi de la requête à Ollama (" + ollamaUrl + ")...");
         try {
+            Map<String, Object> request = new java.util.HashMap<>();
+            request.put("model", modelName);
+            request.put("system", systemPrompt);
+            request.put("prompt", prompt != null ? prompt : "Generate a production-ready Dockerfile");
+            request.put("stream", false);
+
+            com.user.dockerfileservice.service.impl.DockerfileServiceImpl.addDebugLogStatic("📡 Envoi de la requête à Ollama (" + ollamaUrl + ")...");
+            
             OllamaResponse response = restTemplate.postForObject(
                     ollamaUrl + "/api/generate", request, OllamaResponse.class);
             if (response != null && response.response() != null) {
