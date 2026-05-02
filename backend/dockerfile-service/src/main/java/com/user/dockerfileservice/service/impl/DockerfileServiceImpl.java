@@ -126,6 +126,12 @@ public class DockerfileServiceImpl implements DockerfileService {
     public String generate(AnalysisResult analysis) {
         String generatedContent = intelligentGenerationService.generate(analysis);
 
+        // Si l'intelligentGenerationService ne donne rien de satisfaisant, on appelle LLMService directement
+        if (generatedContent == null || generatedContent.contains("error")) {
+             String prompt = "Project type: " + analysis.getFramework() + " | Build tool: " + analysis.getBuildTool();
+             generatedContent = llmService.generate(analysis, prompt);
+        }
+
         // Safety net: post-processing to guarantee Dockerfile correctness
         return postProcessor.process(generatedContent, analysis);
     }

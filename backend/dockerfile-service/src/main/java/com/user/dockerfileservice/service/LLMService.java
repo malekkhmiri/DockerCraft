@@ -26,12 +26,18 @@ public class LLMService {
         this.restTemplate = restTemplate;
     }
 
-    public String generate(String prompt) {
-        String systemPrompt = "You are a Senior DevOps Engineer. Generate an optimal, production-ready, multi-stage Dockerfile. " +
-                "Ensure small image size, security best practices (non-root user), and efficient caching. " +
-                "Return ONLY the Dockerfile content without any explanation.\n\n";
+    public String generate(AnalysisResult analysis, String prompt) {
+        String systemPrompt = "You are a Senior DevOps Engineer. Generate a custom, production-ready, multi-stage Dockerfile.\n" +
+                "STRICT RULES:\n" +
+                "1. ARTIFACT NAME: The JAR file is named '" + analysis.getArtifactName() + "'. Use this specific name, NOT 'app.jar'.\n" +
+                "2. HEALTHCHECK: " + (analysis.isHasActuator() ? "Use '/actuator/health' as the project HAS Spring Boot Actuator." : "DO NOT use '/actuator/health'. Use '" + (analysis.getHealthEndpoint() != null ? analysis.getHealthEndpoint() : "/") + "' or a TCP check instead.") + "\n" +
+                "3. ENVIRONMENT: Include ENV variables for: " + (analysis.getDatabaseType() != null ? "Database (" + analysis.getDatabaseType() + "), " : "") + "Port (" + analysis.getPort() + ").\n" +
+                "4. SECURITY: Use a non-root user (e.g., 'spring').\n" +
+                "5. OPTIMIZATION: Multi-stage build is mandatory. Clean up cache.\n" +
+                "6. .DOCKERIGNORE: Also suggest a small .dockerignore content at the end of the response inside a comment block.\n" +
+                "Return ONLY the Dockerfile content, then the .dockerignore inside a comment block. No conversational text.\n\n";
         
-        logger.info("Appel d'Ollama ({}) avec le modèle : {}", ollamaUrl, modelName);
+        logger.info("Appel d'Ollama ({}) avec le modèle : {} pour le projet : {}", ollamaUrl, modelName, analysis.getArtifactId());
         
         Map<String, Object> request = Map.of(
             "model", modelName,
