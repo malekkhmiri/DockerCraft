@@ -56,9 +56,11 @@ public class DockerfilePostProcessor {
         String version = (a != null && a.getJavaVersion() != null) ? a.getJavaVersion() : "17";
         int port = (a != null && a.getPort() > 0) ? a.getPort() : 8080;
 
-        // Fix 1: Wrong Maven image tag (jdk-XX instead of openjdk-XX-slim)
-        d = d.replaceAll("maven:3\\.8\\.4-jdk-" + version, "maven:3.8.4-openjdk-" + version + "-slim");
-        d = d.replaceAll("maven:(\\d+\\.\\d+\\.\\d+)-jdk-(\\d+)", "maven:$1-openjdk-$2-slim");
+        // Fix 1: Wrong builder image (JRE used for build)
+        if (d.contains("FROM eclipse-temurin:" + version + " AS builder") || d.contains("FROM eclipse-temurin:" + version + " \nAS builder")) {
+            d = d.replace("eclipse-temurin:" + version, "maven:3.9.6-eclipse-temurin-" + version + "-alpine");
+        }
+        d = d.replaceAll("maven:3\\.8\\.4-jdk-" + version, "maven:3.9.6-eclipse-temurin-" + version + "-alpine");
 
         // Fix 2: Remove ARG-based JAR references
         d = d.replaceAll("(?m)^ARG JAR_FILE.*$\\n?", "");

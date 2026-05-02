@@ -62,12 +62,14 @@ public class LLMService {
                 - HEALTHCHECK: %s
 
                 STRICT INSTRUCTIONS:
-                1. Match the Java version EXACTLY (%s).
-                2. Use multi-stage build (maven:3.9-eclipse-temurin-%s as builder).
-                3. Use 'exec' in ENTRYPOINT: ENTRYPOINT ["sh", "-c", "exec java ..."].
+                1. BUILDER IMAGE: Use EXACTLY 'maven:3.9.6-eclipse-temurin-%s-alpine' as the first stage 'builder'.
+                2. RUNTIME IMAGE: Use EXACTLY 'eclipse-temurin:%s-jre-alpine' as the second stage 'runtime'.
+                3. DIRECTORIES: Use '/build' for builder and '/app' for runtime.
+                4. Match the Java version EXACTLY (%s).
+                5. Use 'exec' in ENTRYPOINT: ENTRYPOINT ["sh", "-c", "exec java ..."].
                 Return ONLY the Dockerfile code, no explanation.
                 """.formatted(javaVer, javaVer, dbType, analysis.getArtifactName(),
-                        healthEndpoint, javaVer, javaVer);
+                        healthEndpoint, javaVer);
     }
 
     private String callOllama(String systemPrompt, String prompt) {
