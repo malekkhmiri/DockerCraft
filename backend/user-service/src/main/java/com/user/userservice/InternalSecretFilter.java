@@ -28,7 +28,6 @@ public class InternalSecretFilter extends OncePerRequestFilter {
     private static final String INTERNAL_SECRET_HEADER = "X-Internal-Secret";
     private static final String INTERNAL_SECRET_VALUE = "my-super-secret-key-12345";
 
-    // Routes that are publicly accessible without the internal secret
     private static final List<String> PUBLIC_PATHS = List.of(
             "/api/users/login",
             "/api/users/register",
@@ -36,7 +35,9 @@ public class InternalSecretFilter extends OncePerRequestFilter {
             "/api/users/resend-otp",
             "/swagger-ui",
             "/v3/api-docs",
-            "/api-docs"
+            "/api-docs",
+            "/health",
+            "/"
     );
 
     @Override
