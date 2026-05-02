@@ -85,23 +85,27 @@ public class ProjectAnalyzer {
         Matcher finalName = Pattern.compile("<finalName>(.*?)</finalName>").matcher(pomContent);
         if (finalName.find()) return finalName.group(1) + ".jar";
 
-        // 2. Sinon construire depuis artifactId + version (en filtrant le parent)
+        // 2. Sinon construire depuis artifactId + version (en isolant le header avant dependencies)
         int depsIdx = pomContent.indexOf("<dependencies>");
         String header = depsIdx > 0 ? pomContent.substring(0, depsIdx) : pomContent;
 
         Matcher artifactId = Pattern.compile("<artifactId>(.*?)</artifactId>").matcher(header);
-        Matcher version    = Pattern.compile("<version>(.*?)</version>").matcher(header);
-        
         String id = "app";
+        int idEnd = 0;
         while (artifactId.find()) {
             String candidate = artifactId.group(1);
             if (!candidate.contains("parent") && !candidate.contains("starter")) {
                 id = candidate;
+                idEnd = artifactId.end();
                 break;
             }
         }
         
+        // Chercher la version APRÈS l'artifactId du projet pour éviter de prendre celle du parent
+        String afterId = idEnd > 0 ? header.substring(idEnd) : header;
+        Matcher version = Pattern.compile("<version>(.*?)</version>").matcher(afterId);
         String ver = version.find() ? version.group(1) : "";
+        
         return ver.isBlank() ? id + ".jar" : id + "-" + ver + ".jar";
     }
 
@@ -130,11 +134,9 @@ public class ProjectAnalyzer {
         if (!Files.exists(path)) return Optional.empty();
         try {
             String content = Files.readString(path);
-            // Format bloc : server:\n  port: 8081
             Matcher block = Pattern.compile("server:\\s*\\n\\s*port:\\s*(\\d+)").matcher(content);
             if (block.find()) return Optional.of(Integer.parseInt(block.group(1)));
             
-            // Format inline : server.port: 8081
             Matcher inline = Pattern.compile("server\\.port:\\s*(\\d+)").matcher(content);
             if (inline.find()) return Optional.of(Integer.parseInt(inline.group(1)));
             
@@ -147,7 +149,8 @@ public class ProjectAnalyzer {
     private Optional<String> detectHealthEndpoint(Path projectRoot) {
         Path srcRoot = projectRoot.resolve("src/main/java");
         if (!Files.exists(srcRoot)) return Optional.empty();
-        try (Stream<Path> stream = Files.walk(srcRoot)) {
+        // Limite de profondeur à 15 pour éviter de scanner inutilement des modules profonds
+        try (Stream<Path> stream = Files.walk(srcRoot, 15)) {
             return stream
                 .filter(p -> p.toString().endsWith(".java"))
                 .map(p -> { 
@@ -176,14 +179,11 @@ public class ProjectAnalyzer {
             routes.add(route.replace("//", "/"));
         }
 
-        // 2. @GetMapping sans argument (hérite du classPrefix)
-        if (javaSource.contains("@GetMapping\n") || javaSource.contains("@GetMapping\r") ||
-            (javaSource.contains("@GetMapping ") && !javaSource.contains("@GetMapping("))) {
-            if (!classPrefix.isBlank()) {
-                String route = classPrefix;
-                if (!route.startsWith("/")) route = "/" + route;
-                routes.add(route.replace("//", "/"));
-            }
+        // 2. @GetMapping sans argument (cas local via regex pour éviter les faux positifs globaux)
+        Matcher noArg = Pattern.compile("@GetMapping\\s*\\n").matcher(javaSource);
+        if (noArg.find() && !classPrefix.isBlank()) {
+            String route = classPrefix.startsWith("/") ? classPrefix : "/" + classPrefix;
+            routes.add(route.replace("//", "/"));
         }
 
         return routes;
