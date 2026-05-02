@@ -4,11 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# Build and DEBUG: List ALL files in /app to see where things go
+# Build and DEBUG: Global find for index.html
 RUN npm run build --configuration=production && \
-    echo "--- DEBUG: LISTING ALL FILES IN /app ---" && \
-    ls -R /app && \
-    echo "--- END DEBUG ---" && \
+    echo "--- START RADAR SEARCH ---" && \
+    find /app -name index.html && \
+    echo "--- END RADAR SEARCH ---" && \
     exit 1
 
 # Stage 2: Serve the app with Nginx
