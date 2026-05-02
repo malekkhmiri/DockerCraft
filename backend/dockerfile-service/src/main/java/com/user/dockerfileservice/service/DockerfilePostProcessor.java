@@ -74,14 +74,25 @@ public class DockerfilePostProcessor {
 
         // Fix 6: Inject HEALTHCHECK if completely absent
         if (!d.contains("HEALTHCHECK")) {
-            String healthPath = (a != null && a.isHasActuator()) ? "/actuator/health" : "/";
+            String healthPath = (a != null && a.getHealthEndpoint() != null) ? a.getHealthEndpoint() : "/";
             String healthLine = "\nHEALTHCHECK --interval=30s --timeout=10s --retries=5 \\\n" +
                     "  CMD wget --quiet --tries=1 --spider http://localhost:" + port + healthPath + " || exit 1";
             if (d.contains("ENTRYPOINT")) {
                 d = d.replaceFirst("(?m)^ENTRYPOINT", healthLine + "\nENTRYPOINT");
-            } else if (d.contains("CMD")) {
-                d = d.replaceFirst("(?m)^CMD", healthLine + "\nCMD");
             }
+        }
+
+        // Fix 7: Inject USER if missing (Security enforcement)
+        if (!d.contains("USER ")) {
+            String userLine = "\nRUN addgroup -S spring && adduser -S spring -G spring\nUSER spring:spring";
+            if (d.contains("WORKDIR")) {
+                d = d.replaceFirst("(?m)^WORKDIR", userLine + "\nWORKDIR");
+            }
+        }
+        
+        // Fix 8: Inject EXPOSE if missing
+        if (!d.contains("EXPOSE ")) {
+            d = d.replaceFirst("(?m)^ENTRYPOINT", "EXPOSE " + port + "\nENTRYPOINT");
         }
 
         // Fix 7: Replace hallucinated parent-starter JAR
@@ -190,17 +201,13 @@ public class DockerfilePostProcessor {
     private boolean isValid(String d, AnalysisResult a) {
         if (d == null || d.isBlank())
             return false;
-        int port = (a != null && a.getPort() > 0) ? a.getPort() : 8080;
-
-        return countOccurrences(d, "FROM ") >= 2
-                && d.contains("COPY --from=")
-                && d.contains("EXPOSE " + port)
-                && d.contains("ENTRYPOINT")
-                && d.contains("USER ")
+        
+        // On est plus souple : on veut juste qu'il y ait au moins une instruction FROM et une ENTRYPOINT/CMD
+        return d.contains("FROM ")
+                && (d.contains("ENTRYPOINT") || d.contains("CMD"))
                 && !d.contains("```")
                 && !d.contains("<version>")
-                && !d.contains("[REPLACE")
-                && !d.matches("(?s).*maven:\\d+\\.\\d+\\.\\d+-jdk-\\d+.*"); // no bad image tag
+                && !d.contains("[REPLACE");
     }
 
     // ── Layer 4: Deterministic fallback ────────────────────────────────

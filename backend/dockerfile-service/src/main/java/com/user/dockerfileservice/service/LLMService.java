@@ -62,12 +62,9 @@ public class LLMService {
                 - HEALTHCHECK: %s
 
                 STRICT INSTRUCTIONS:
-                1. MINIMALISM: If FRAMEWORK is 'java-plain', generate a MINIMAL Dockerfile. DO NOT add EXPOSE, HEALTHCHECK, or DB variables if not needed.
-                2. DB: If DATABASE is 'H2', DO NOT add external DB drivers or ENV vars.
-                3. If project uses MySQL, DO NOT install libpq or postgresql-client.
-                4. Match the Java version EXACTLY (%s).
-                5. Use multi-stage build (maven:3.9-eclipse-temurin-%s as builder).
-                6. Use 'exec' in ENTRYPOINT: ENTRYPOINT ["sh", "-c", "exec java ..."].
+                1. Match the Java version EXACTLY (%s).
+                2. Use multi-stage build (maven:3.9-eclipse-temurin-%s as builder).
+                3. Use 'exec' in ENTRYPOINT: ENTRYPOINT ["sh", "-c", "exec java ..."].
                 Return ONLY the Dockerfile code, no explanation.
                 """.formatted(javaVer, javaVer, dbType, analysis.getArtifactName(),
                         healthEndpoint, javaVer, javaVer);
