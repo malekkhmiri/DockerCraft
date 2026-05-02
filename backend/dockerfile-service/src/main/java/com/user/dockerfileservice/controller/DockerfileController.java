@@ -70,4 +70,12 @@ public class DockerfileController {
         service.generateDockerfile(projectId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/debug/test")
+    @Operation(summary = "Endpoint de diagnostic pour tester les URLs")
+    public ResponseEntity<String> debugTest() {
+        return ResponseEntity.ok("DOCKERCRAFT DEBUG :: Ollama URL: " + System.getenv("OLLAMA_URL") + 
+                                 " | Project Service URL: " + System.getenv("PROJECT_SERVICE_URL") + 
+                                 " | OLLAMA_MODEL: " + System.getenv("OLLAMA_MODEL"));
+    }
 }
