@@ -8,19 +8,26 @@ RUN npm run build --configuration=production
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:alpine
-# Remove default nginx static assets
-RUN rm -rf /usr/share/nginx/html/*
+# Remove default nginx static assets and config
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/*
 
-# Copy build artifacts from build stage
-# Note: Angular 17+ with application builder puts files in dist/project-name/browser
-COPY --from=build /app/dist/frontend-platform/browser /usr/share/nginx/html
+# Copy the entire build output to a temporary location
+COPY --from=build /app/dist/frontend-platform /usr/share/nginx/html-tmp
+
+# Move files to the final location (handling potential /browser subfolder)
+RUN if [ -d "/usr/share/nginx/html-tmp/browser" ]; then \
+        mv /usr/share/nginx/html-tmp/browser/* /usr/share/nginx/html/; \
+    else \
+        mv /usr/share/nginx/html-tmp/* /usr/share/nginx/html/; \
+    fi && rm -rf /usr/share/nginx/html-tmp
 
 # Custom nginx config to handle Angular routing and dynamic PORT
 RUN echo 'server { \
     listen ${PORT}; \
+    server_name localhost; \
+    root /usr/share/nginx/html; \
+    index index.html index.htm; \
     location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
         try_files $uri $uri/ /index.html; \
     } \
 }' > /etc/nginx/conf.d/default.conf.template

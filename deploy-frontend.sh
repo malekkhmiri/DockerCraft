@@ -10,7 +10,7 @@ echo "🚀 Déploiement du Frontend via LOCAL BUILD (Cloud Shell)..."
 
 # 1. Construction locale de l'image Docker
 echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
-docker build -t docker.io/$DOCKER_USER/dockergeneration-frontend:latest ./frontend
+docker build --no-cache -t docker.io/$DOCKER_USER/dockergeneration-frontend:latest ./frontend
 
 # 2. Poussée de l'image vers Docker Hub
 echo "📤 Poussée de l'image vers Docker Hub..."
