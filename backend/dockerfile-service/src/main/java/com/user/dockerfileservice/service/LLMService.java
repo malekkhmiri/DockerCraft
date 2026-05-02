@@ -36,14 +36,15 @@ public class LLMService {
                 "- TECHNOLOGY: Java " + javaVer + " (use eclipse-temurin:" + javaVer + " as base)\n" +
                 "- DATABASE: " + dbType + " (DO NOT add PostgreSQL/libpq if using MySQL)\n" +
                 "- ARTIFACT: " + analysis.getArtifactName() + "\n" +
-                "- HEALTHCHECK: " + (analysis.isHasActuator() ? "/actuator/health" : (analysis.getHealthEndpoint() != null ? analysis.getHealthEndpoint() : "/")) + "\n\n" +
+                "- HEALTHCHECK: " + (analysis.getHealthEndpoint() != null ? analysis.getHealthEndpoint() : "NONE (DO NOT ADD ONE IF NONE)") + "\n\n" +
                 "STRICT INSTRUCTIONS:\n" +
-                "1. If project uses MySQL, DO NOT install libpq or postgresql-client.\n" +
-                "2. Match the Java version EXACTLY (" + javaVer + ").\n" +
-                "3. Use multi-stage build (maven:3.9-eclipse-temurin-" + javaVer + " as builder).\n" +
-                "4. Use a non-root user 'devops'.\n" +
-                "5. Ignore previous examples if they use different Java versions or DB types.\n" +
-                "Return ONLY the Dockerfile code, then the .dockerignore inside a comment.\n";
+                "1. MINIMALISM: If FRAMEWORK is 'java-plain', generate a MINIMAL Dockerfile. DO NOT add EXPOSE, HEALTHCHECK, or DB variables if not needed.\n" +
+                "2. DB: If DATABASE is 'H2', DO NOT add external DB drivers or ENV vars.\n" +
+                "3. If project uses MySQL, DO NOT install libpq or postgresql-client.\n" +
+                "4. Match the Java version EXACTLY (" + javaVer + ").\n" +
+                "5. Use multi-stage build (maven:3.9-eclipse-temurin-" + javaVer + " as builder).\n" +
+                "6. Use 'exec' in ENTRYPOINT: ENTRYPOINT [\"sh\", \"-c\", \"exec java ...\"].\n" +
+                "Return ONLY the Dockerfile code.\n";
         
         logger.info("🚀 Génération ELITE pour {} (Java {}, DB {})", analysis.getArtifactId(), javaVer, dbType);
         

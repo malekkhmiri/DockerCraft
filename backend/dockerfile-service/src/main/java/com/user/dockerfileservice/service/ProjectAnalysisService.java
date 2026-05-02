@@ -64,11 +64,20 @@ public class ProjectAnalysisService {
         boolean hasActuator = buildContent.matches("(?s).*<artifactId>\\s*spring-boot-starter-actuator\\s*</artifactId>.*") 
                            && !buildContent.matches("(?s).*<!--.*<artifactId>\\s*spring-boot-starter-actuator\\s*</artifactId>.*-->.*");
 
+        String framework = "java-plain";
+        if (buildContent.contains("spring-boot")) {
+            framework = "spring-boot";
+        } else if (buildContent.contains("quarkus")) {
+            framework = "quarkus";
+        } else if (buildContent.contains("micronaut")) {
+            framework = "micronaut";
+        }
+
         AnalysisResult.AnalysisResultBuilder builder = AnalysisResult.builder()
                 .language("JAVA")
                 .os("linux")
                 .buildTool(isMaven ? "maven" : "gradle")
-                .framework("spring-boot");
+                .framework(framework);
 
         if (isMaven) {
             Document doc = parsePom(realRoot.resolve("pom.xml"));
@@ -139,6 +148,9 @@ public class ProjectAnalysisService {
     }
 
     private String resolveHealthEndpoint(AnalysisResult a, Path root) {
+        if (!"spring-boot".equals(a.getFramework())) {
+            return null; // Pas de healthcheck par défaut pour le Java pur
+        }
         if (a.isHasActuator()) return "/actuator/health";
         if (a.isHasCustomHealthEndpoint()) return "/api/health";
         
