@@ -1,5 +1,6 @@
 export const environment = {
     production: true,
-    apiUrl: 'http://localhost:8080/api',
-    wsUrl: 'http://localhost:8084'
+    apiUrl: '/api',
+    wsUrl: '/ws',
+    dockerfileServiceUrl: 'https://dc-dockerfile-service-715286351060.us-central1.run.app/api'
 };

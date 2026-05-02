@@ -129,7 +129,8 @@ export class AdminService {
     }
 
     updateDockerfile(projectId: string, content: string): Observable<any> {
-        return this.http.put(`${environment.apiUrl}/dockerfiles/project/${projectId}`, { content });
+        const baseUrl = environment.dockerfileServiceUrl || environment.apiUrl;
+        return this.http.put(`${baseUrl}/dockerfiles/project/${projectId}`, { content });
     }
 
     rerunPipeline(projectId: string): Observable<any> {

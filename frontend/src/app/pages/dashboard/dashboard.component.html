@@ -1,6 +1,6 @@
-﻿<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     DockerGeneration â€” DASHBOARD (Unified Workspace)
-     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ============================================================================
+     DockerGeneration — DASHBOARD (Unified Workspace)
+     ============================================================================ -->
 <div class="app-shell">
 
   <!-- Sidebar -->
@@ -13,7 +13,7 @@
     <header class="dc-topbar">
       <div class="topbar-left">
         <h2 class="pro-gradient-text">Workspace Dashboard</h2>
-        <p>Bonjour, <strong>{{ authService.getUsername() }}</strong> â€” {{ today | date:'EEEE d MMMM yyyy' }}</p>
+        <p>Bonjour, <strong>{{ authService.getUsername() }}</strong> — {{ today | date:'EEEE d MMMM yyyy' }}</p>
       </div>
       <div class="topbar-actions">
         <!-- Role Badge -->
@@ -32,15 +32,15 @@
     <!-- Page Content -->
     <div class="page-content">
 
-      <!-- â”€â”€ Unified Analytics Row â”€â”€ -->
+      <!-- ── Unified Analytics Row ── -->
       <div class="pro-analytics-bar animate-fade-up mb-4">
         <div class="analytics-item">
-          <span class="analytics-label">Taux de succÃ¨s</span>
+          <span class="analytics-label">Taux de succès</span>
           <span class="analytics-val text-success">{{ getSuccessRate() }}%</span>
         </div>
         <div class="analytics-divider"></div>
         <div class="analytics-item">
-          <span class="analytics-label">DÃ©ploiements ce mois</span>
+          <span class="analytics-label">Déploiements ce mois</span>
           <span class="analytics-val text-orange">{{ stats.total }}</span>
         </div>
         <div class="analytics-divider"></div>
@@ -50,12 +50,12 @@
         </div>
         <div class="analytics-divider"></div>
         <div class="analytics-item">
-          <span class="analytics-label">Ã‰checs</span>
+          <span class="analytics-label">Échecs</span>
           <span class="analytics-val text-danger">{{ stats.failed }}</span>
         </div>
       </div>
 
-      <!-- â”€â”€ Stats Grid â”€â”€ -->
+      <!-- ── Stats Grid ── -->
       <div class="stat-grid animate-fade-up mb-4">
         <!-- Total -->
         <div class="stat-card hover-card">
@@ -74,7 +74,7 @@
           </div>
           <div>
             <div class="stat-value">{{ stats.success }}</div>
-            <div class="stat-label">DÃ©ployÃ©s avec succÃ¨s</div>
+            <div class="stat-label">Déployés avec succès</div>
           </div>
         </div>
         <!-- In Progress -->
@@ -84,7 +84,7 @@
           </div>
           <div>
             <div class="stat-value">{{ stats.inProgress }}</div>
-            <div class="stat-label">En cours d'exÃ©cution</div>
+            <div class="stat-label">En cours d'exécution</div>
           </div>
         </div>
         <!-- Failed -->
@@ -94,12 +94,12 @@
           </div>
           <div>
             <div class="stat-value">{{ stats.failed }}</div>
-            <div class="stat-label">Ã‰checs de pipeline</div>
+            <div class="stat-label">Échecs de pipeline</div>
           </div>
         </div>
       </div>
 
-      <!-- â”€â”€ Projects Section â”€â”€ -->
+      <!-- ── Projects Section ── -->
       <div class="projects-section animate-fade-up">
 
         <!-- Header -->
@@ -133,7 +133,7 @@
             <i class="bi bi-rocket-takeoff"></i>
           </div>
           <h3>Aucun projet pour l'instant</h3>
-          <p class="text-muted">Uploadez votre premier projet et laissez l'IA gÃ©nÃ©rer votre Dockerfile.</p>
+          <p class="text-muted">Uploadez votre premier projet et laissez l'IA générer votre Dockerfile.</p>
           <a routerLink="/upload" class="btn btn-pro mt-2">
             <i class="bi bi-cloud-upload"></i>
             Lancer mon premier projet
@@ -199,7 +199,7 @@
 
       </div>
 
-      <!-- â”€â”€ Quick Actions â”€â”€ -->
+      <!-- ── Quick Actions ── -->
       <div class="quick-actions animate-fade-up mt-4">
         <p class="section-title role-pro">Raccourcis</p>
         <div class="quick-grid">
@@ -217,4 +217,3 @@
     </div><!-- /page-content -->
   </div><!-- /main-content -->
 </div><!-- /app-shell -->
-
