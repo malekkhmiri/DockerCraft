@@ -16,10 +16,10 @@ public class LLMService {
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
     private final RestTemplate restTemplate;
 
-    @Value("${ollama.url:http://dc-ollama:11434}")
+    @Value("${OLLAMA_URL:http://dc-ollama:8080}")
     private String ollamaUrl;
 
-    @Value("${ollama.model:qwen2.5-coder:3b}")
+    @Value("${OLLAMA_MODEL:codellama:7b}")
     private String modelName;
 
     public LLMService(@org.springframework.beans.factory.annotation.Qualifier("externalRestTemplate") RestTemplate restTemplate) {
