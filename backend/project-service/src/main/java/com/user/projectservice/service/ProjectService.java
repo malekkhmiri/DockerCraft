@@ -13,4 +13,5 @@ public interface ProjectService {
     List<ProjectResponse> getProjectsByUserEmail(String userEmail);
     long countProjectsByUserEmail(String userEmail);
     void updateStatus(Long id, String status);
+    String getArchivePath(Long id);
 }

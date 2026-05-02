@@ -27,19 +27,22 @@ echo "✅ Ollama prêt à : $OLLAMA_URL"
 echo "📦 Compilation du JAR avec Maven..."
 mvn clean package -pl dockerfile-service -am -DskipTests -Dmaven.test.skip=true
 
-# 3. Construction locale de l'image Docker (Dans le Cloud Shell)
-echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
+# 3. Construction locale de l'image Docker (Dans le Cloud Shell) avec TAG UNIQUE
+TAG=$(date +%s)
+IMAGE_NAME="docker.io/$DOCKER_USER/dockergeneration-dockerfile-service:$TAG"
+
+echo "🐳 Construction locale de l'image Docker : $IMAGE_NAME..."
 DOCKER_USER="malekkhmiri"
-docker build --provenance=false -t $DOCKER_USER/dockergeneration-dockerfile-service:latest ./dockerfile-service
+docker build --provenance=false -t $IMAGE_NAME ./dockerfile-service
 
 # 4. Poussée de l'image vers Docker Hub
 echo "📤 Poussée de l'image vers Docker Hub ($DOCKER_USER)..."
-docker push $DOCKER_USER/dockergeneration-dockerfile-service:latest
+docker push $IMAGE_NAME
 
 # 5. Déploiement sur Cloud Run
-echo "📦 Déploiement final sur dc-dockerfile-service (via Docker Hub)..."
+echo "📦 Déploiement final sur dc-dockerfile-service (Tag: $TAG)..."
 gcloud run deploy dc-dockerfile-service \
-    --image docker.io/$DOCKER_USER/dockergeneration-dockerfile-service:latest \
+    --image $IMAGE_NAME \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
@@ -47,7 +50,7 @@ gcloud run deploy dc-dockerfile-service \
     --cpu 2 \
     --cpu-boost \
     --timeout 600 \
-    --set-env-vars="OLLAMA_URL=$OLLAMA_URL"
+    --set-env-vars="OLLAMA_URL=$OLLAMA_URL,PROJECT_SERVICE_URL=https://dc-project-service-715286351060.us-central1.run.app"
 
 SERVICE_URL=$(gcloud run services describe dc-dockerfile-service --region $REGION --format='value(status.url)')
 

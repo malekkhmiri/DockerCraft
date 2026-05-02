@@ -83,4 +83,24 @@ public class ProjectController {
         projectService.updateStatus(id, status);
         return ResponseEntity.ok().build();
     }
+    
+    @GetMapping("/{id}/download")
+    @Operation(summary = "Télécharger l'archive du projet")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadProject(@PathVariable Long id) {
+        try {
+            String archivePath = projectService.getArchivePath(id);
+            java.nio.file.Path path = java.nio.file.Paths.get(archivePath);
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(path.toUri());
+            
+            if (resource.exists() || resource.isReadable()) {
+                return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + path.getFileName().toString() + "\"")
+                    .body(resource);
+            } else {
+                throw new RuntimeException("Fichier non trouvé ou illisible");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors du téléchargement : " + e.getMessage());
+        }
+    }
 }

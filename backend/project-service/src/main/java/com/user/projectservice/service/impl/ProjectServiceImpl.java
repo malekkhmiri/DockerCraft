@@ -154,6 +154,13 @@ public class ProjectServiceImpl implements ProjectService {
         });
     }
 
+    @Override
+    public String getArchivePath(Long id) {
+        return projectRepository.findById(id)
+                .map(Project::getArchivePath)
+                .orElseThrow(() -> new RuntimeException("Projet non trouvé"));
+    }
+
     private ProjectResponse mapToResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())

@@ -76,7 +76,25 @@ public class DockerfileServiceImpl implements DockerfileService {
             logger.info("ℹ️ Quota ignoré (Mode illimité activé)");
 
             // 3. Analyse & Détection
-            AnalysisResult analysis = analysisService.analyze(project.getArchivePath());
+            // Comme on est sur Cloud Run, on doit TÉLÉCHARGER le fichier ZIP depuis le project-service
+            // car le dossier /tmp n'est pas partagé entre les containers.
+            String downloadUrl = getProjectServiceUrl() + "/api/projects/" + projectId + "/download";
+            logger.info("⬇️ Téléchargement du ZIP depuis : {}", downloadUrl);
+            
+            byte[] archiveData = restTemplate.getForObject(downloadUrl, byte[].class);
+            if (archiveData == null) {
+                logger.error("❌ Échec du téléchargement du ZIP pour le projet #{}", projectId);
+                return;
+            }
+
+            java.nio.file.Path tempZip = java.nio.file.Files.createTempFile("project-" + projectId + "-", ".zip");
+            java.nio.file.Files.write(tempZip, archiveData);
+            logger.info("📦 ZIP téléchargé localement : {}", tempZip.toAbsolutePath());
+
+            AnalysisResult analysis = analysisService.analyze(tempZip.toString());
+            
+            // On supprime le fichier temporaire après analyse
+            try { java.nio.file.Files.deleteIfExists(tempZip); } catch (Exception ignore) {}
             
             // 4 & 5. Génération & Post-processing
             String content = generate(analysis);
