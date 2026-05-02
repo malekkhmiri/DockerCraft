@@ -51,7 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/register", "/api/users/verify-email",
                                 "/api/users/resend-otp", "/api-docs",
                                 "/api-docs/**", "/api/users/login", "/v3/api-docs", "/v3/api-docs/**",
-                                "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                                "/swagger-ui/**", "/swagger-ui.html", "/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

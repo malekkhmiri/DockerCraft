@@ -1,16 +1,4 @@
-FROM eclipse-temurin:17-jdk-jammy
-
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    tesseract-ocr-eng \
-    tesseract-ocr-fra \
-    tesseract-ocr-ara \
-    libgomp1 \
-    libgl1-mesa-glx \
-    && rm -rf /var/lib/apt/lists/*
-
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
-COPY target/*-SNAPSHOT.jar app.jar
-
-EXPOSE 9014
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY target/user-service-*.jar app.jar
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Djava.security.egd=file:/dev/./urandom -jar app.jar"]
