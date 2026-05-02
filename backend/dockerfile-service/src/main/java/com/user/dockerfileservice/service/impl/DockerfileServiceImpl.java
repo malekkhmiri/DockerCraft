@@ -23,6 +23,20 @@ import java.util.List;
 public class DockerfileServiceImpl implements DockerfileService {
 
     private static final Logger logger = LoggerFactory.getLogger(DockerfileServiceImpl.class);
+    
+    // Buffer de logs pour le debug (50 derniers messages)
+    private static final List<String> debugLogs = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+    public static List<String> getDebugLogs() {
+        return new java.util.ArrayList<>(debugLogs);
+    }
+
+    private void addDebugLog(String msg) {
+        String log = java.time.LocalDateTime.now() + " - " + msg;
+        debugLogs.add(log);
+        logger.info(msg);
+        if (debugLogs.size() > 50) debugLogs.remove(0);
+    }
     private final DockerfileRepository repository;
     @org.springframework.context.annotation.Lazy
     private final LLMService llmService;
@@ -62,51 +76,52 @@ public class DockerfileServiceImpl implements DockerfileService {
     @org.springframework.scheduling.annotation.Async
     @Override
     public void generateDockerfile(Long projectId) {
-        logger.info("⚡ DÉMARRAGE ASYNCHRONE de la génération pour le projet ID: {}...", projectId);
+        addDebugLog("⚡ DÉMARRAGE ASYNCHRONE pour le projet #" + projectId);
         try {
             // 1. Récupérer les infos du projet
             String projectUrl = getProjectServiceUrl() + "/api/projects/" + projectId;
+            addDebugLog("🔍 Récupération des infos projet : " + projectUrl);
             ProjectResponse project = restTemplate.getForObject(projectUrl, ProjectResponse.class);
             
             if (project == null || project.getArchivePath() == null) {
-                logger.error("❌ Projet ou chemin d'archive introuvable pour #{}", projectId);
+                addDebugLog("❌ Projet introuvable pour #" + projectId);
                 return;
             }
 
-            // 2. Vérifier Quota (Désactivé pour l'unification Pro)
-            logger.info("ℹ️ Quota ignoré (Mode illimité activé)");
-
             // 3. Analyse & Détection
-            // Comme on est sur Cloud Run, on doit TÉLÉCHARGER le fichier ZIP depuis le project-service
-            // car le dossier /tmp n'est pas partagé entre les containers.
             String downloadUrl = getProjectServiceUrl() + "/api/projects/" + projectId + "/download";
-            logger.info("⬇️ Téléchargement du ZIP depuis : {}", downloadUrl);
+            addDebugLog("⬇️ Téléchargement du ZIP : " + downloadUrl);
             
             byte[] archiveData = restTemplate.getForObject(downloadUrl, byte[].class);
             if (archiveData == null) {
-                logger.error("❌ Échec du téléchargement du ZIP pour le projet #{}", projectId);
+                addDebugLog("❌ Échec du téléchargement ZIP pour #" + projectId);
                 return;
             }
 
             java.nio.file.Path tempZip = java.nio.file.Files.createTempFile("project-" + projectId + "-", ".zip");
             java.nio.file.Files.write(tempZip, archiveData);
-            logger.info("📦 ZIP téléchargé localement : {}", tempZip.toAbsolutePath());
+            addDebugLog("📦 ZIP sauvegardé temporairement (Taille: " + archiveData.length + " bytes)");
 
+            addDebugLog("🕵️‍♂️ Lancement de l'Analyse Statique...");
             AnalysisResult analysis = analysisService.analyze(tempZip.toString());
+            addDebugLog("✅ Analyse terminée (Java: " + analysis.getJavaVersion() + ", Framework: " + analysis.getFramework() + ")");
             
-            // On supprime le fichier temporaire après analyse
             try { java.nio.file.Files.deleteIfExists(tempZip); } catch (Exception ignore) {}
             
             // 4 & 5. Génération & Post-processing
+            addDebugLog("🤖 Appel à l'IA Ollama (Qwen)...");
             String content = generate(analysis);
+            addDebugLog("✅ Réponse IA reçue (Taille: " + content.length() + " chars)");
+            
             boolean isValid = validatorService.validate(content, analysis);
+            addDebugLog("⚖️ Validation Post-Processing : " + (isValid ? "VALIDE" : "FALLBACK"));
             
             String method = "AI";
             if (content.startsWith("# METHOD: FALLBACK")) {
                 method = "FALLBACK";
             }
 
-            // 6. Sauvegarde & Notification
+            // 6. Sauvegarde
             try {
                 Dockerfile dockerfile = Dockerfile.builder()
                         .projectId(projectId)
@@ -116,9 +131,9 @@ public class DockerfileServiceImpl implements DockerfileService {
                         .build();
                 
                 repository.save(dockerfile);
-                logger.info("✅ Dockerfile sauvegardé avec succès pour le projet #{} (Méthode: {})", projectId, method);
+                addDebugLog("💾 Dockerfile sauvegardé en DB !");
             } catch (Exception e) {
-                logger.error("❌ ERREUR CRITIQUE lors de la sauvegarde du Dockerfile pour le projet #{}: {}", projectId, e.getMessage(), e);
+                addDebugLog("❌ Erreur DB : " + e.getMessage());
             }
             
             if (isValid) {
