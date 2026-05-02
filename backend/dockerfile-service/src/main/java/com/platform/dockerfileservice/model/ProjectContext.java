@@ -19,6 +19,7 @@ public class ProjectContext {
     private String language;
     private String version;
     private String buildTool;
+    private String artifactName;
     private String framework;
     private String databaseType;
     private String healthEndpoint;

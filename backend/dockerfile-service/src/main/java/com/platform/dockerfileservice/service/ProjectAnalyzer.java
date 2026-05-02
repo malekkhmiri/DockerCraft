@@ -15,21 +15,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Service responsible for analyzing project structure to extract metadata.
+ * Service responsible for analyzing project structure with high precision.
  */
 @Service
 public class ProjectAnalyzer {
 
-    /**
-     * Analyzes the project at the given root path.
-     *
-     * @param projectRoot the root path of the project
-     * @return the analyzed ProjectContext
-     */
     public ProjectContext analyze(Path projectRoot) {
         ProjectContext.ProjectContextBuilder builder = ProjectContext.builder();
         
-        // Les conteneurs ciblent toujours Linux — évite les faux positifs des fichiers .bat/.cmd
+        // Cible Linux par défaut pour les conteneurs
         builder.targetOS(ProjectContext.TargetOS.LINUX);
 
         detectLanguageAndBuildInfo(projectRoot, builder);
@@ -48,14 +42,15 @@ public class ProjectAnalyzer {
                        .buildTool("maven")
                        .framework(detectFramework(content))
                        .databaseType(detectDatabase(content))
-                       .version(detectJavaVersion(content));
+                       .version(detectJavaVersion(content))
+                       .artifactName(detectArtifactName(content));
 
-                detectHealthEndpoint(projectRoot)
-                        .ifPresent(builder::healthEndpoint);
+                detectHealthEndpoint(projectRoot).ifPresent(builder::healthEndpoint);
 
             } catch (IOException e) {
                 builder.language("java").buildTool("maven")
-                       .framework("java-plain").version("17");
+                       .framework("java-plain").version("17")
+                       .artifactName("app.jar");
             }
         } else if (Files.exists(projectRoot.resolve("requirements.txt"))) {
             builder.language("python").version("3.9");
@@ -78,19 +73,34 @@ public class ProjectAnalyzer {
     }
 
     private String detectDatabase(String pomContent) {
-        if (pomContent.contains("mysql-connector"))  return "mysql";
-        if (pomContent.contains("postgresql"))       return "postgresql";
+        if (pomContent.contains("com.mysql") || 
+            pomContent.contains("mysql-connector"))  return "mysql";
+        if (pomContent.contains("org.postgresql"))   return "postgresql";
         if (pomContent.contains("com.h2database"))   return "h2";
         return null;
     }
 
+    private String detectArtifactName(String pomContent) {
+        // 1. Chercher <finalName> explicite
+        Matcher finalName = Pattern.compile("<finalName>(.*?)</finalName>").matcher(pomContent);
+        if (finalName.find()) return finalName.group(1) + ".jar";
+
+        // 2. Sinon construire depuis artifactId + version
+        Matcher artifactId = Pattern.compile("<artifactId>(.*?)</artifactId>").matcher(pomContent);
+        Matcher version    = Pattern.compile("<version>(.*?)</version>").matcher(pomContent);
+        
+        String id  = artifactId.find() ? artifactId.group(1) : "app";
+        String ver = version.find()    ? version.group(1)    : "";
+        
+        return ver.isBlank() ? id + ".jar" : id + "-" + ver + ".jar";
+    }
+
     private void detectPort(Path projectRoot, ProjectContext.ProjectContextBuilder builder) {
-        // Essaye application.properties puis application-prod.properties
-        int port = readPortFromProperties(
-                    projectRoot.resolve("src/main/resources/application.properties"))
-                .orElseGet(() -> readPortFromProperties(
-                    projectRoot.resolve("src/main/resources/application-prod.properties"))
-                .orElse(8080));
+        Path base = projectRoot.resolve("src/main/resources");
+        int port = readPortFromProperties(base.resolve("application.properties"))
+                .orElseGet(() -> readPortFromYaml(base.resolve("application.yml"))
+                .orElseGet(() -> readPortFromProperties(base.resolve("application-prod.properties"))
+                .orElse(8080)));
         builder.port(port);
     }
 
@@ -101,6 +111,20 @@ public class ProjectAnalyzer {
             props.load(is);
             String portStr = props.getProperty("server.port", "8080");
             return Optional.of(Integer.parseInt(portStr));
+        } catch (IOException | NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Integer> readPortFromYaml(Path path) {
+        if (!Files.exists(path)) return Optional.empty();
+        try {
+            String content = Files.readString(path);
+            Matcher m = Pattern.compile("server:\\s*\\n\\s*port:\\s*(\\d+)").matcher(content);
+            if (!m.find()) {
+                m = Pattern.compile("server.port:\\s*(\\d+)").matcher(content);
+            }
+            return m.find() ? Optional.of(Integer.parseInt(m.group(1))) : Optional.empty();
         } catch (IOException | NumberFormatException e) {
             return Optional.empty();
         }
@@ -117,17 +141,36 @@ public class ProjectAnalyzer {
                     catch (IOException e) { return ""; } 
                 })
                 .flatMap(content -> extractGetRoutes(content).stream())
-                .filter(route -> !route.contains("{")) // Exclure les PathVariables
+                .filter(route -> !route.contains("{"))
                 .findFirst();
         } catch (IOException e) {
             return Optional.empty();
         }
     }
 
-    private List<String> extractGetRoutes(String content) {
+    private List<String> extractGetRoutes(String javaSource) {
         List<String> routes = new ArrayList<>();
-        Matcher m = Pattern.compile("@GetMapping\\(\"([^\"]+)\"\\)").matcher(content);
-        while (m.find()) routes.add(m.group(1));
+
+        // Préfixe de classe : @RequestMapping("/api")
+        String classPrefix = "";
+        Matcher classMatcher = Pattern.compile(
+            "@RequestMapping\\([^)]*(?:value|path)\\s*=\\s*\"([^\"]+)\"[^)]*\\)"
+        ).matcher(javaSource);
+        if (classMatcher.find()) classPrefix = classMatcher.group(1);
+        else {
+            classMatcher = Pattern.compile("@RequestMapping\\(\"([^\"]+)\"\\)").matcher(javaSource);
+            if (classMatcher.find()) classPrefix = classMatcher.group(1);
+        }
+
+        // Routes de méthode : @GetMapping
+        Matcher m = Pattern.compile(
+            "@GetMapping\\((?:(?:value|path)\\s*=\\s*)?\"([^\"]+)\"\\)"
+        ).matcher(javaSource);
+        while (m.find()) {
+            String route = classPrefix + m.group(1);
+            if (!route.startsWith("/")) route = "/" + route;
+            routes.add(route.replace("//", "/"));
+        }
         return routes;
     }
 }
