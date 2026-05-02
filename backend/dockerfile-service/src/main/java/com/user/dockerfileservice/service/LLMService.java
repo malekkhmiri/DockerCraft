@@ -1,21 +1,22 @@
 package com.user.dockerfileservice.service;
 
 import com.user.dockerfileservice.dto.AnalysisResult;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-@org.springframework.context.annotation.Lazy
 public class LLMService {
 
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
+    private final RestTemplate restTemplate;
 
     private static final String ERROR_DOCKERFILE = """
             # Erreur lors de la génération
@@ -23,13 +24,11 @@ public class LLMService {
             CMD ["echo", "error"]
             """;
 
-    private final RestTemplate restTemplate;
+    @Value("${OLLAMA_MODEL:qwen2.5-coder:3b}")
+    private String modelName;
 
     @Value("${OLLAMA_URL:http://dc-ollama:8080}")
     private String ollamaUrl;
-
-    @Value("${OLLAMA_MODEL:qwen2.5-coder:3b}")
-    private String modelName;
 
     public LLMService(@Qualifier("externalRestTemplate") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -37,7 +36,7 @@ public class LLMService {
 
     public String generate(AnalysisResult analysis, String userPrompt) {
         String systemPrompt = buildSystemPrompt(analysis);
-        logger.info("🚀 Génération ELITE pour {} (Java {}, DB {})",
+        logger.info("🚀 Génération ARCHITECTE pour {} (Java {}, DB {})",
                 analysis.getArtifactId(),
                 analysis.getJavaVersion(),
                 analysis.getDatabaseType());
@@ -45,39 +44,37 @@ public class LLMService {
     }
 
     private String buildSystemPrompt(AnalysisResult analysis) {
-        String dbType = analysis.getDatabaseType() != null
-                ? analysis.getDatabaseType()
-                : "H2 (no external DB)";
-        String javaVer = analysis.getJavaVersion();
-        String healthEndpoint = analysis.getHealthEndpoint() != null
-                ? analysis.getHealthEndpoint()
-                : "NONE (DO NOT ADD ONE IF NONE)";
+        String dbType = analysis.getDatabaseType() != null ? analysis.getDatabaseType() : "H2";
+        String javaVer = analysis.getJavaVersion() != null ? analysis.getJavaVersion() : "17";
+        String port = String.valueOf(analysis.getPort() > 0 ? analysis.getPort() : 8080);
 
-        return """
-                You are an Elite DevOps Engineer. Task: Generate a CUSTOM Dockerfile for this SPECIFIC project.
-                FACTS FOR THIS PROJECT (DO NOT HALLUCINATE):
-                - TECHNOLOGY: Java %s (use eclipse-temurin:%s as base)
-                - DATABASE: %s (DO NOT add PostgreSQL/libpq if using MySQL)
-                - ARTIFACT: %s
-                - HEALTHCHECK: %s
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are an Expert AI & DevOps Architect. Task: Generate a production-grade, hyper-personalized Dockerfile.\n");
+        sb.append("PROJECT CONTEXT:\n");
+        sb.append("- Java Version: ").append(javaVer).append("\n");
+        sb.append("- Framework: ").append(analysis.getFramework()).append("\n");
+        sb.append("- Build Tool: ").append(analysis.getBuildTool()).append("\n");
+        sb.append("- Artifact: ").append(analysis.getArtifactName()).append("\n");
+        sb.append("- Service Port: ").append(port).append("\n");
+        sb.append("- Database Driver: ").append(dbType).append("\n");
+        
+        if (analysis.isHasSecurity()) sb.append("- SECURITY: Spring Security detected. Ensure proper ENV for credentials.\n");
+        if (analysis.isHasLombok()) sb.append("- LOMBOK: Used in project.\n");
+        if (analysis.getHealthEndpoint() != null) sb.append("- HEALTHCHECK: Endpoint is ").append(analysis.getHealthEndpoint()).append("\n");
 
-                STRICT INSTRUCTIONS:
-                1. BUILDER IMAGE: Use EXACTLY 'maven:3.9.6-eclipse-temurin-%s-alpine' as the first stage 'builder'.
-                2. RUNTIME IMAGE: Use EXACTLY 'eclipse-temurin:%s-jre-alpine' as the second stage 'runtime'.
-                3. DIRECTORIES: Use '/build' for builder and '/app' for runtime.
-                4. Match the Java version EXACTLY (%s).
-                5. Use 'exec' in ENTRYPOINT: ENTRYPOINT ["sh", "-c", "exec java ..."].
-                Return ONLY the Dockerfile code, no explanation.
-                """.formatted(
-                        javaVer, 
-                        analysis.getFramework(), 
-                        dbType, 
-                        analysis.getArtifactName(),
-                        healthEndpoint, 
-                        javaVer, 
-                        javaVer, 
-                        javaVer
-                );
+        sb.append("\nSTRICT ARCHITECTURAL RULES:\n");
+        sb.append("1. MULTI-STAGE: Build in 'maven:3.9.6-eclipse-temurin-").append(javaVer).append("-alpine' as 'builder'.\n");
+        sb.append("2. RUNTIME: Use 'eclipse-temurin:").append(javaVer).append("-jre-alpine' as 'runtime'.\n");
+        sb.append("3. SECURITY: Run as non-root user 'appuser'.\n");
+        sb.append("4. OPTIMIZATION: Use -XX:+UseContainerSupport and -XX:MaxRAMPercentage=75.0.\n");
+        sb.append("5. DYNAMIC ENV: If DB is MySQL/Postgres, use ENV variables for DB_URL, DB_USER, DB_PASS.\n");
+        if (analysis.getHealthEndpoint() != null) {
+            sb.append("6. HEALTHCHECK: Use 'wget' or 'curl' targeting http://localhost:").append(port).append(analysis.getHealthEndpoint()).append(".\n");
+        }
+        sb.append("7. ENTRYPOINT: Must use ENTRYPOINT [\"sh\", \"-c\", \"exec java $JAVA_OPTS -jar app.jar\"].\n");
+        sb.append("\nReturn ONLY the Dockerfile code.");
+
+        return sb.toString();
     }
 
     private String callOllama(String systemPrompt, String prompt) {
