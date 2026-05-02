@@ -28,11 +28,11 @@ echo "📦 Compilation du JAR avec Maven..."
 mvn clean package -pl dockerfile-service -am -DskipTests -Dmaven.test.skip=true
 
 # 3. Construction locale de l'image Docker (Dans le Cloud Shell) avec TAG UNIQUE
+DOCKER_USER="malekkhmiri"
 TAG=$(date +%s)
 IMAGE_NAME="docker.io/$DOCKER_USER/dockergeneration-dockerfile-service:$TAG"
 
 echo "🐳 Construction locale de l'image Docker : $IMAGE_NAME..."
-DOCKER_USER="malekkhmiri"
 docker build --provenance=false -t $IMAGE_NAME ./dockerfile-service
 
 # 4. Poussée de l'image vers Docker Hub
