@@ -207,22 +207,21 @@ public class DockerfilePostProcessor {
 
     private String buildFallback(AnalysisResult a) {
         boolean isMaven = a == null || "maven".equals(a.getBuildTool());
-        String version = (a != null && a.getJavaVersion() != null) ? a.getJavaVersion() : "17";
+        String version = (a != null && a.getJavaVersion() != null) ? a.getJavaVersion() : "21";
         int port = (a != null && a.getPort() > 0) ? a.getPort() : 8080;
-        String buildCmd = isMaven ? "mvn clean package -DskipTests -B" : "./gradlew build -x test";
+        String buildCmd = isMaven ? "mvn clean package -DskipTests -B -Dspring-boot.repackage.excludeDevtools=true" : "./gradlew build -x test";
         String copyPath = isMaven ? "target/*.jar" : "build/libs/*.jar";
         String builder = getMavenImage(a);
         String runtime = getRuntimeImage(a);
-        String healthPath = (a != null && a.isHasActuator()) ? "/actuator/health" : "/";
         
-        // Use reconstructed values for fallback
+        // Utiliser la route API détectée par notre nouveau scanner !
+        String healthPath = (a != null && a.getHealthEndpoint() != null) ? a.getHealthEndpoint() : "/";
+        
         String dbUrl = null;
-        String dbUser = "root";
         if (a != null && a.getDatabaseName() != null) {
             String type = (a.getDatabaseType() != null) ? a.getDatabaseType() : "mysql";
             int dbPort = "mysql".equalsIgnoreCase(type) ? 3306 : 5432;
-            dbUrl = "jdbc:" + type + "://db:" + dbPort + "/" + a.getDatabaseName();
-            dbUser = (a.getDatabaseUsername() != null) ? a.getDatabaseUsername() : "root";
+            dbUrl = "jdbc:" + type + "://db:" + dbPort + "/${DB_NAME:-" + a.getDatabaseName() + "}";
         }
 
         StringBuilder sb = new StringBuilder();
@@ -232,15 +231,11 @@ public class DockerfilePostProcessor {
         sb.append("COPY src ./src\n");
         sb.append("RUN ").append(buildCmd).append("\n\n");
         
-        // Stage 2
         sb.append("FROM ").append(runtime).append(" AS runtime\n");
-        sb.append("RUN addgroup -S spring \\\n");
-        sb.append("    && adduser -S spring -G spring \\\n");
-        sb.append("    && apk add --no-cache wget\n");
+        sb.append("RUN addgroup -S spring && adduser -S spring -G spring && apk add --no-cache wget\n");
         sb.append("USER spring:spring\n");
         sb.append("WORKDIR /app\n");
 
-        // Build ENV block using analyzed values
         sb.append("ENV SPRING_PROFILES_ACTIVE=prod \\\n");
         sb.append("    JAVA_OPTS=\"-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0\"");
         if (dbUrl != null) {
@@ -252,12 +247,9 @@ public class DockerfilePostProcessor {
 
         sb.append("COPY --from=builder --chown=spring:spring ").append(copyPath).append(" app.jar\n");
         sb.append("EXPOSE ").append(port).append("\n");
-
         sb.append("HEALTHCHECK --interval=30s --timeout=10s --retries=5 \\\n");
         sb.append("  CMD wget --quiet --tries=1 --spider http://localhost:").append(port).append(healthPath).append(" || exit 1\n");
-
-        // ✅ ALWAYS use shell form so $JAVA_OPTS is interpreted
-        sb.append("ENTRYPOINT [\"sh\", \"-c\", \"java $JAVA_OPTS -jar app.jar\"]\n");
+        sb.append("ENTRYPOINT [\"sh\", \"-c\", \"exec java $JAVA_OPTS -jar app.jar\"]\n");
         return sb.toString();
     }
 
