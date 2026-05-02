@@ -9,9 +9,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class LLMService {
@@ -26,6 +29,11 @@ public class LLMService {
             FROM alpine
             CMD ["echo", "error"]
             """;
+
+    private static final Set<String> DOCKERFILE_KEYWORDS = Set.of(
+            "FROM", "RUN", "COPY", "ADD", "ENV", "EXPOSE", "HEALTHCHECK",
+            "ENTRYPOINT", "CMD", "WORKDIR", "ARG", "LABEL", "USER",
+            "VOLUME", "STOPSIGNAL", "ONBUILD", "SHELL", "#");
 
     private final RestTemplate restTemplate;
     private final DebugLogger debugLogger;
@@ -44,10 +52,19 @@ public class LLMService {
 
     public String generate(AnalysisResult analysis) {
         String systemPrompt = buildSystemPrompt(analysis);
-        logger.info("Génération pour {} (Java {}, DB {})",
+        
+        String javaVer   = analysis.getJavaVersion()   != null ? analysis.getJavaVersion()   : "17";
+        String framework = analysis.getFramework()     != null ? analysis.getFramework()     : "spring-boot";
+        String dbType    = analysis.getDatabaseType()    != null ? analysis.getDatabaseType()    : "none";
+        String artifact  = analysis.getArtifactName()  != null ? analysis.getArtifactName()  : "app.jar";
+
+        logger.info("🚀 Génération pour {} — JAR: {} (Java {}, DB {}, Framework {})",
                 analysis.getArtifactId(),
-                analysis.getJavaVersion(),
-                analysis.getDatabaseType());
+                artifact,
+                javaVer,
+                dbType,
+                framework);
+
         return callOllama(systemPrompt);
     }
 
@@ -67,7 +84,7 @@ public class LLMService {
         StringBuilder sb = new StringBuilder();
 
         sb.append("""
-            You are a Dockerfile generator. Your ONLY output is a valid Dockerfile.
+            You are a professional Dockerfile generator. Your ONLY output is a valid, production-ready Dockerfile.
             No explanations. No markdown. Start directly with FROM.
 
             """);
@@ -111,17 +128,14 @@ public class LLMService {
 
             Runtime stage:
             - FROM eclipse-temurin:%s-jre-alpine AS runtime
-            - RUN addgroup -S spring && adduser -S spring -G spring%s
+            - RUN addgroup -S spring && adduser -S spring -G spring
             - USER spring:spring
             - WORKDIR /app
             - ENV SPRING_PROFILES_ACTIVE=prod JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
             - COPY --from=builder --chown=spring:spring /build/target/%s app.jar
             - EXPOSE 8080
             - ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
-            """.formatted(
-                javaVer, javaVer,
-                hasHealth ? " \\\\\n      && apk add --no-cache wget" : "",
-                artifact));
+            """.formatted(javaVer, javaVer, artifact));
 
         if (hasDb) {
             String jdbcUrl = switch (dbType.toLowerCase()) {
@@ -149,6 +163,10 @@ public class LLMService {
             sb.append("""
 
                 ## Healthcheck — add exactly:
+                In the runtime stage, update the existing RUN addgroup line to include wget:
+                RUN addgroup -S spring && adduser -S spring -G spring && apk add --no-cache wget
+                
+                Then add the HEALTHCHECK instruction:
                 HEALTHCHECK --interval=30s --timeout=10s --retries=5 \\
                   CMD wget --quiet --tries=1 --spider http://localhost:8080%s || exit 1
                 """.formatted(health));
@@ -183,18 +201,24 @@ public class LLMService {
     }
 
     private String cleanResponse(String response) {
-        // Supprimer les blocs markdown
+        // 1. Nettoyer les blocs Markdown
         String cleaned = response.replaceAll("(?s)```(?:dockerfile|docker)?(.*?)```", "$1");
 
-        // Extraire depuis le premier FROM
+        // 2. Chercher le premier FROM (début du Dockerfile)
         Matcher matcher = Pattern.compile("(?s)(FROM\\s+.+)").matcher(cleaned);
         if (!matcher.find()) return ERROR_DOCKERFILE;
-        cleaned = matcher.group(1);
 
-        // Couper la prose parasite après le Dockerfile (paragraphe qui suit une ligne vide)
-        cleaned = cleaned.replaceAll("(?m)\n{2,}[A-Z][a-z].*(?s).*$", "");
-
-        return cleaned.trim();
+        // 3. Filtrer ligne par ligne (Approche positive par mots-clés Docker)
+        return Arrays.stream(matcher.group(1).split("\n"))
+                .filter(line -> {
+                    String t = line.stripLeading();
+                    return t.isBlank()
+                            || t.startsWith("&&")
+                            || t.startsWith("\\")
+                            || DOCKERFILE_KEYWORDS.stream().anyMatch(t::startsWith);
+                })
+                .collect(Collectors.joining("\n"))
+                .trim();
     }
 
     private record OllamaResponse(String response) {}
