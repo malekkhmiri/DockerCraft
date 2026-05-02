@@ -25,7 +25,7 @@ echo "✅ Ollama prêt à : $OLLAMA_URL"
 
 # 2. Compilation du JAR (On utilise le Maven du Cloud Shell)
 echo "📦 Compilation du JAR avec Maven..."
-mvn clean package -pl dockerfile-service -am -DskipTests
+mvn clean package -pl dockerfile-service -am -DskipTests -Dmaven.test.skip=true
 
 # 3. Construction locale de l'image Docker (Dans le Cloud Shell)
 echo "🐳 Construction locale de l'image Docker pour Docker Hub..."
