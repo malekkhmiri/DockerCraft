@@ -9,21 +9,20 @@ REGION="us-central1"
 echo "🚀 Déploiement de DockerCraft via LOCAL BUILD (Cloud Shell)..."
 
 # 1. Déploiement de Ollama (IA)
-echo "🤖 Déploiement de dc-ollama..."
+echo "🤖 Construction et déploiement de dc-ollama avec le modèle intégré..."
+gcloud builds submit --tag gcr.io/$PROJECT_ID/dc-ollama -f Dockerfile.ollama .
+
 gcloud run deploy dc-ollama \
-    --image docker.io/ollama/ollama:latest \
+    --image gcr.io/$PROJECT_ID/dc-ollama \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
     --memory 8Gi \
     --cpu 4 \
-    --port 8080 \
-    --set-env-vars="OLLAMA_HOST=0.0.0.0:8080"
+    --port 8080
 
 OLLAMA_URL=$(gcloud run services describe dc-ollama --region $REGION --format='value(status.url)')
 echo "✅ Ollama prêt à : $OLLAMA_URL"
-echo "📥 Pré-chargement du modèle Qwen 2.5 Coder 3B..."
-curl -X POST "$OLLAMA_URL/api/pull" -d '{"name": "qwen2.5-coder:3b"}'
 
 # 2. Compilation du JAR (On utilise le Maven du Cloud Shell)
 echo "📦 Compilation du JAR avec Maven..."
