@@ -1,17 +1,19 @@
 package com.user.userservice;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class EmailProducer {
     
+    private final EmailService emailService;
+    
     public void queueVerificationCode(String email, String code) {
-        // Logique RabbitMQ désactivée
-        System.out.println("EmailProducer simulé: Code " + code + " pour " + email);
+        emailService.sendVerificationCode(email, code);
     }
     
     public void queueSimpleEmail(String email, String subject, String body) {
-        // Logique RabbitMQ désactivée
-        System.out.println("EmailProducer simulé: Sujet '" + subject + "' pour " + email);
+        emailService.sendSimpleEmail(email, subject, body);
     }
 }
