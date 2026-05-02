@@ -1,4 +1,4 @@
-package com.platform.dockerfileservice.strategy;
+package com.user.dockerfileservice.strategy;
 
 import org.springframework.stereotype.Service;
 import java.util.List;

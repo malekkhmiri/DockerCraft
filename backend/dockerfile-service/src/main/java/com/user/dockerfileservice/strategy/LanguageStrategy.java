@@ -1,6 +1,5 @@
-package com.platform.dockerfileservice.strategy;
+package com.user.dockerfileservice.strategy;
 
-import com.platform.dockerfileservice.model.ProjectContext;
 import com.user.dockerfileservice.dto.AnalysisResult;
 
 /**

@@ -6,10 +6,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 
-@SpringBootApplication(scanBasePackages = {"com.user.dockerfileservice", "com.platform.dockerfileservice"}, 
-                       exclude = { SecurityAutoConfiguration.class })
-@EntityScan(basePackages = {"com.user.dockerfileservice.entity", "com.platform.dockerfileservice.model"})
-@EnableJpaRepositories(basePackages = {"com.user.dockerfileservice.repository", "com.platform.dockerfileservice.repository"})
+@SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
 public class DockerfileServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(DockerfileServiceApplication.class, args);

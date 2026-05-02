@@ -1,4 +1,4 @@
-package com.platform.dockerfileservice.model;
+package com.user.dockerfileservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

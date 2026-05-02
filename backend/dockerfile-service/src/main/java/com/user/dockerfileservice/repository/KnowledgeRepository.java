@@ -1,6 +1,6 @@
-package com.platform.dockerfileservice.repository;
+package com.user.dockerfileservice.repository;
 
-import com.platform.dockerfileservice.model.DockerfileKnowledge;
+import com.user.dockerfileservice.entity.DockerfileKnowledge;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

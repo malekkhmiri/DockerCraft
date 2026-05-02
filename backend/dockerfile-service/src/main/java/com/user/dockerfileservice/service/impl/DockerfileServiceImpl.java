@@ -14,8 +14,9 @@ import com.user.dockerfileservice.service.ProjectAnalysisService;
 import com.user.dockerfileservice.service.ValidatorService;
 import com.user.dockerfileservice.service.DockerfilePostProcessor;
 import com.user.dockerfileservice.exception.UnsupportedLanguageException;
-import com.platform.dockerfileservice.strategy.LanguageStrategy;
-import com.platform.dockerfileservice.strategy.StrategyRegistry;
+import com.user.dockerfileservice.strategy.LanguageStrategy;
+import com.user.dockerfileservice.strategy.StrategyRegistry;
+import com.user.dockerfileservice.service.DockerfileGenerationService;
 import java.util.List;
 
 @Service
@@ -31,7 +32,7 @@ public class DockerfileServiceImpl implements DockerfileService {
     @org.springframework.context.annotation.Lazy
     private final DockerfilePostProcessor postProcessor;
     @org.springframework.context.annotation.Lazy
-    private final com.platform.dockerfileservice.service.DockerfileGenerationService intelligentGenerationService;
+    private final DockerfileGenerationService intelligentGenerationService;
     private final org.springframework.web.client.RestTemplate restTemplate;
 
     public DockerfileServiceImpl(@org.springframework.context.annotation.Lazy DockerfileRepository repository,
@@ -39,7 +40,7 @@ public class DockerfileServiceImpl implements DockerfileService {
             @org.springframework.context.annotation.Lazy ProjectAnalysisService analysisService,
             @org.springframework.context.annotation.Lazy ValidatorService validatorService,
             @org.springframework.context.annotation.Lazy DockerfilePostProcessor postProcessor,
-            @org.springframework.context.annotation.Lazy com.platform.dockerfileservice.service.DockerfileGenerationService intelligentGenerationService,
+            @org.springframework.context.annotation.Lazy DockerfileGenerationService intelligentGenerationService,
             @org.springframework.beans.factory.annotation.Qualifier("externalRestTemplate") @org.springframework.context.annotation.Lazy org.springframework.web.client.RestTemplate restTemplate) {
         this.repository = repository;
         this.llmService = llmService;

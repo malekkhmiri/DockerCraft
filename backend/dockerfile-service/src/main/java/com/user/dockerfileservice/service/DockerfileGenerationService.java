@@ -1,9 +1,8 @@
-package com.platform.dockerfileservice.service;
+package com.user.dockerfileservice.service;
 
-import com.platform.dockerfileservice.model.DockerfileKnowledge;
-import com.platform.dockerfileservice.model.ProjectContext;
-import com.platform.dockerfileservice.repository.KnowledgeRepository;
-import com.platform.dockerfileservice.strategy.StrategyRegistry;
+import com.user.dockerfileservice.entity.DockerfileKnowledge;
+import com.user.dockerfileservice.repository.KnowledgeRepository;
+import com.user.dockerfileservice.strategy.StrategyRegistry;
 import com.user.dockerfileservice.dto.AnalysisResult;
 import com.user.dockerfileservice.service.LLMService;
 import com.user.dockerfileservice.service.ValidatorService;
