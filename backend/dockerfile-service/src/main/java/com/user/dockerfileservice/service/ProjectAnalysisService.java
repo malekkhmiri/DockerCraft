@@ -20,6 +20,8 @@ import java.util.zip.ZipInputStream;
 public class ProjectAnalysisService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProjectAnalysisService.class);
+    private boolean isMultiModule = false;
+    private List<String> modules = new ArrayList<>();
 
     public AnalysisResult analyze(String archivePath) {
         Path extracted = extractArchive(archivePath);
@@ -54,7 +56,9 @@ public class ProjectAnalysisService {
         boolean isMaven = Files.exists(realRoot.resolve("pom.xml"));
         String buildContent = isMaven ? Files.readString(realRoot.resolve("pom.xml")) : 
                              (Files.exists(realRoot.resolve("build.gradle")) ? Files.readString(realRoot.resolve("build.gradle")) : "");
-        String props = detectProperties(realRoot);
+        // ✅ FIX: scan from the full extracted archive root, not just the pom root
+        // This finds properties deep in sub-modules (e.g. mall-admin/src/main/resources/application-prod.yml)
+        String props = detectProperties(root);
 
         // ✅ Détection robuste : évite les faux positifs (ex: dépendances commentées)
         boolean hasActuator = buildContent.matches("(?s).*<artifactId>\\s*spring-boot-starter-actuator\\s*</artifactId>.*") 
@@ -68,6 +72,10 @@ public class ProjectAnalysisService {
 
         if (isMaven) {
             Document doc = parsePom(realRoot.resolve("pom.xml"));
+            this.modules = extractModules(doc);
+            this.isMultiModule = !modules.isEmpty();
+            if (isMultiModule) logger.info("Multi-module project detected: {}", modules);
+
             String javaVer = detectJavaVersion(doc);
             String sbVer = extractRegex(buildContent, "spring-boot-starter-parent.*?<version>([\\d.]+)</version>", "3.0.0");
             
@@ -87,14 +95,16 @@ public class ProjectAnalysisService {
                .hasThymeleaf(buildContent.contains("thymeleaf"))
                .hasCustomHealthEndpoint(detectCustomHealthEndpoint(realRoot))
                .databaseType(detectDatabase(buildContent))
-               .databaseName(extractDbName(extractProperty(props, "spring.datasource.url")))
-               .databaseUsername(extractProperty(props, "spring.datasource.username"))
+               .databaseName(extractDbNameFromProps(props))
+               .databaseUsername(extractBestProperty(props, "spring.datasource.username", "username"))
                .ddlAuto(extractProperty(props, "spring.jpa.hibernate.ddl-auto"))
-               .datasourceUrl(extractProperty(props, "spring.datasource.url"))
+               .datasourceUrl(extractBestProperty(props, "spring.datasource.url", "url"))
                .artifactVersion(extractProperty(props, "project.version"))
                .springProfile(extractProperty(props, "spring.profiles.active"))
                .springProfiles(parseProfiles(extractProperty(props, "spring.profiles.active")))
-               .extraEnvVars(detectExtraEnvVars(props));
+               .extraEnvVars(detectExtraEnvVars(props))
+               .isMultiModule(isMultiModule)
+               .modules(modules);
 
         AnalysisResult result = builder.build();
         result.setHealthEndpoint(resolveHealthEndpoint(result));
@@ -136,8 +146,15 @@ public class ProjectAnalysisService {
     }
 
     private String buildJarName(AnalysisResult a) {
-        if (a.getArtifactId() != null && a.getArtifactVersion() != null)
-            return a.getArtifactId() + "-" + a.getArtifactVersion() + ".jar";
+        if (a.getArtifactId() != null && a.getArtifactVersion() != null) {
+            String name = a.getArtifactId() + "-" + a.getArtifactVersion() + ".jar";
+            // If DB name is still null or generic, use artifactId as a strong hint
+            if (a.getDatabaseName() == null || a.getDatabaseName().equals("app_db")) {
+                a.setDatabaseName(a.getArtifactId());
+                logger.info("Using artifactId '{}' as DB name hint", a.getArtifactId());
+            }
+            return name;
+        }
         return "*.jar";
     }
 
@@ -157,6 +174,15 @@ public class ProjectAnalysisService {
     private String getXmlTag(Document doc, String tag) {
         NodeList nodes = doc.getElementsByTagName(tag);
         return nodes.getLength() > 0 ? nodes.item(0).getTextContent().trim() : null;
+    }
+
+    private List<String> extractModules(Document doc) {
+        List<String> res = new ArrayList<>();
+        NodeList nodes = doc.getElementsByTagName("module");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            res.add(nodes.item(i).getTextContent().trim());
+        }
+        return res;
     }
 
     private String detectJavaVersion(Document pom) {
@@ -187,13 +213,35 @@ public class ProjectAnalysisService {
     }
 
     private String detectProperties(Path root) {
-        for (String f : List.of("src/main/resources/application.properties", "src/main/resources/application.yml")) {
-            Path p = root.resolve(f);
-            if (Files.exists(p)) {
-                try { return Files.readString(p); } catch (IOException ignored) {}
-            }
+        StringBuilder baseProps = new StringBuilder();
+        StringBuilder prodProps = new StringBuilder();
+        try (var walk = Files.walk(root)) {
+            walk.filter(Files::isRegularFile)
+                .filter(p -> {
+                    String name = p.getFileName().toString();
+                    return name.startsWith("application") && (name.endsWith(".yml") || name.endsWith(".properties"));
+                }).forEach(p -> {
+                    try {
+                        String name = p.getFileName().toString();
+                        String content = Files.readString(p);
+                        String header = "\n--- " + root.relativize(p) + " ---\n";
+                        // ✅ Prioritize -prod files — they contain real credentials
+                        if (name.contains("-prod") || name.contains("-production")) {
+                            logger.info("Found PROD properties: {}", p);
+                            prodProps.append(header).append(content);
+                        } else {
+                            logger.info("Found BASE properties: {}", p);
+                            baseProps.append(header).append(content);
+                        }
+                    } catch (IOException ignored) {}
+                });
+        } catch (IOException e) {
+            logger.error("Error walking for properties: {}", e.getMessage());
         }
-        return "";
+        // prod files come first so their values win during extraction
+        String result = prodProps + "\n" + baseProps;
+        logger.info("Properties detected ({} chars). Prod files: {}", result.length(), prodProps.length() > 0 ? "YES" : "NO");
+        return result;
     }
 
     private int extractPort(String props) {
@@ -202,12 +250,68 @@ public class ProjectAnalysisService {
     }
 
     private String extractProperty(String props, String key) {
-        return extractRegex(props, key + "\\s*[:=]\\s*([^\\n\\r]+)", null);
+        // Try flat key first (e.g. spring.datasource.url: value)
+        String flatRegex = "(?m)^\\s*" + key.replace(".", "\\.") + "\\s*[:=]\\s*([^\\n\\r#]+)";
+        String val = extractRegex(props, flatRegex, null);
+        if (val != null) return val.trim();
+
+        // Try nested YAML last-segment (e.g. for spring.datasource.url, look for "url: ...")
+        String[] parts = key.split("\\.");
+        String lastPart = parts[parts.length - 1];
+        String nestedRegex = "(?m)^\\s*" + lastPart + "\\s*:\\s*([^\\n\\r#]+)";
+        val = extractRegex(props, nestedRegex, null);
+        return val != null ? val.trim() : null;
     }
 
+    /**
+     * Tries multiple key patterns and returns the first non-null result.
+     * Used to extract values that may be written with their full path or just the last segment.
+     */
+    private String extractBestProperty(String props, String fullKey, String shortKey) {
+        String val = extractProperty(props, fullKey);
+        if (val != null) {
+            logger.info("Extracted '{}' = '{}'", fullKey, val);
+            return val;
+        }
+        val = extractProperty(props, shortKey);
+        if (val != null) logger.info("Extracted '{}' via shortKey '{}' = '{}'", fullKey, shortKey, val);
+        return val;
+    }
+
+    private String extractDbNameFromProps(String props) {
+        // 1. Try standard keys first
+        String url = extractBestProperty(props, "spring.datasource.url", "url");
+        if (url != null && !url.contains("[") && !url.contains("${")) {
+            Matcher m = Pattern.compile("://[^/]+/([^?\\s]+)").matcher(url);
+            if (m.find()) {
+                String name = m.group(1).trim();
+                logger.info("Detected DB name from primary URL: '{}'", name);
+                return name;
+            }
+        }
+
+        // 2. Fallback: Search for any JDBC-like string in the whole props blob
+        Matcher m2 = Pattern.compile("jdbc:[a-z]+://[^/]+/([^?\\s;]+)").matcher(props);
+        while (m2.find()) {
+            String name = m2.group(1).trim();
+            if (!name.equals("app_db") && !name.equals("test") && !name.contains("$")) {
+                logger.info("Detected DB name from secondary JDBC string: '{}'", name);
+                return name;
+            }
+        }
+
+        // 3. Fallback: Search for spring.datasource.name or similar
+        String nameProp = extractBestProperty(props, "spring.datasource.name", "database-name");
+        if (nameProp != null) return nameProp;
+
+        return null;
+    }
+
+    /** @deprecated Use extractDbNameFromProps instead */
     private String extractDbName(String url) {
-        if (url == null) return "app_db";
-        return extractRegex(url, ".*/([^?]+)", "app_db");
+        if (url == null) return null;
+        Matcher m = Pattern.compile("://[^/]+/([^?\\s]+)").matcher(url);
+        return m.find() ? m.group(1).trim() : null;
     }
 
     private String extractRegex(String src, String regex, String fallback) {
@@ -216,6 +320,7 @@ public class ProjectAnalysisService {
     }
 
     private String resolveMavenImage(String jv, String sv) {
-        return "maven:3.9.6-eclipse-temurin-" + jv + "-alpine";
+        String mappedV = "1.8".equals(jv) ? "8" : jv;
+        return "maven:3.9.6-eclipse-temurin-" + mappedV + "-alpine";
     }
 }

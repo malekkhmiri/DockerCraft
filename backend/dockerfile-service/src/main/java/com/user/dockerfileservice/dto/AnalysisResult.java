@@ -44,6 +44,8 @@ public class AnalysisResult {
     private boolean hasValidation;
     private boolean hasThymeleaf;
     private boolean hasNativeImage;
+    private boolean isMultiModule;
+    private List<String> modules;
 
     // Recommendations
     private String mavenImageRecommended;

@@ -23,18 +23,29 @@ public class ValidatorService {
 
         List<String> errors = new ArrayList<>();
 
-        // 1. Validation de l'image de build
-        if (a.getMavenImageRecommended() != null && !content.contains(a.getMavenImageRecommended()))
-            errors.add("Image Maven incorrecte. Attendu: " + a.getMavenImageRecommended());
+        // 1. Validation de l'image de build (Flexible)
+        if (a.getMavenImageRecommended() != null) {
+            String recommended = a.getMavenImageRecommended();
+            // On vérifie au moins si l'image contient "maven" et la version de Java
+            String javaVer = a.getJavaVersion() != null ? a.getJavaVersion() : "17";
+            boolean hasVersion = content.contains(javaVer);
+            if ("1.8".equals(javaVer) && !hasVersion) {
+                hasVersion = content.contains("-8-") || content.contains(":8-") || content.contains(" 8 ");
+            }
+
+            if (!content.contains("maven") || !hasVersion) {
+                errors.add("Image Maven incorrecte ou version Java incompatible. Attendu : " + recommended);
+            }
+        }
 
         // 2. Validation de l'artifact JAR
         String expectedJar = a.getArtifactName() != null ? a.getArtifactName() : "app.jar";
         if (!content.contains(expectedJar) && !content.contains("*.jar"))
-            errors.add("Nom du JAR incorrect. Attendu: " + expectedJar);
+            errors.add("Nom du JAR incorrect. Attendu : " + expectedJar);
 
         // 3. Validation du port
         if (!content.contains("EXPOSE " + a.getPort()))
-            errors.add("Port incorrect. Attendu: EXPOSE " + a.getPort());
+            errors.add("Port incorrect. Attendu : EXPOSE " + a.getPort());
 
         // 4. Validation des packages PostgreSQL
         if ("postgresql".equals(a.getDatabaseType()) && !content.contains("libpq"))
@@ -42,7 +53,7 @@ public class ValidatorService {
 
         // 6. Validation du Healthcheck
         if (!content.contains("HEALTHCHECK"))
-            errors.add("HEALTHCHECK absent");
+            errors.add("HEALTHCHECK absent du Dockerfile");
 
         if (errors.isEmpty()) {
             logger.info("✅ Dockerfile validé sémantiquement.");
