@@ -33,7 +33,7 @@ gcloud run deploy dc-project-service \
     --memory 2Gi \
     --cpu 1 \
     --timeout 300 \
-    --set-env-vars="SPRING_PROFILES_ACTIVE=prod,SPRING_DATASOURCE_URL=jdbc:h2:mem:projectdb;DB_CLOSE_DELAY=-1,SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver,SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.H2Dialect,EUREKA_CLIENT_ENABLED=false,SPRING_CLOUD_DISCOVERY_ENABLED=false,SPRING_CLOUD_CONFIG_ENABLED=false,SPRING_CONFIG_IMPORT_CHECK_ENABLED=false,SPRING_RABBITMQ_ENABLED=false,LOGGING_LEVEL_ROOT=INFO"
+    --set-env-vars="SPRING_PROFILES_ACTIVE=prod,DOCKERFILE_SERVICE_URL=https://dc-dockerfile-service-715286351060.us-central1.run.app/api/dockerfiles,SPRING_DATASOURCE_URL=jdbc:h2:mem:projectdb;DB_CLOSE_DELAY=-1,SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver,SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.H2Dialect,EUREKA_CLIENT_ENABLED=false,SPRING_CLOUD_DISCOVERY_ENABLED=false,SPRING_CLOUD_CONFIG_ENABLED=false,SPRING_CONFIG_IMPORT_CHECK_ENABLED=false,SPRING_RABBITMQ_ENABLED=false,LOGGING_LEVEL_ROOT=INFO"
 
 SERVICE_URL=$(gcloud run services describe dc-project-service --region $REGION --format='value(status.url)')
 
