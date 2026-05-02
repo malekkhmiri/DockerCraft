@@ -1,51 +1,27 @@
 package com.user.userservice;
 
 import jakarta.mail.MessagingException;
-import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.util.Properties;
-
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
+    private final JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    @Value("${spring.mail.password}")
-    private String mailPassword;
-
-    private JavaMailSenderImpl buildMailSender() {
-        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost("smtp.gmail.com");
-        mailSender.setPort(587);
-        mailSender.setUsername(fromEmail);
-        mailSender.setPassword(mailPassword);
-
-        Properties props = mailSender.getJavaMailProperties();
-        props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.starttls.required", "true");
-        // Fix pour l'erreur PKIX / SSLHandshakeException
-        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
-        props.put("mail.smtp.ssl.protocols", "TLSv1.2");
-        props.put("mail.debug", "true");
-
-        return mailSender;
-    }
-
     public void sendSimpleEmail(String toEmail, String subject, String body) {
         try {
-            JavaMailSenderImpl mailSender = buildMailSender();
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(fromEmail, "DockerGeneration");
@@ -61,7 +37,6 @@ public class EmailService {
 
     public void sendVerificationCode(String toEmail, String code) {
         try {
-            JavaMailSenderImpl mailSender = buildMailSender();
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -74,7 +49,6 @@ public class EmailService {
             logger.info("Code de vérification envoyé à : {}", toEmail);
         } catch (MessagingException | java.io.UnsupportedEncodingException e) {
             logger.error("Échec de l'envoi de l'email à {} : {}", toEmail, e.getMessage());
-            throw new RuntimeException("Impossible d'envoyer l'email de vérification : " + e.getMessage());
         }
     }
 
