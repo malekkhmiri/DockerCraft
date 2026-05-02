@@ -54,7 +54,7 @@ public class DockerfileGenerationService {
         String finalPrompt = enrichPromptWithKnowledge(basePrompt, successes, failures);
 
         // 3. LLM Generation & AUTO-CORRECTION
-        String rawContent = llmService.generate(analysis, finalPrompt);
+        String rawContent = llmService.generate(analysis);
         String generatedContent = postProcessor.process(rawContent, analysis);
 
         // 4. Semantic Validation

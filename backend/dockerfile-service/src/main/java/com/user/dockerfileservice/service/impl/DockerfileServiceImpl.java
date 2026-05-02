@@ -159,10 +159,7 @@ public class DockerfileServiceImpl implements DockerfileService, DebugLogger {
     public String generate(AnalysisResult analysis) {
         // ON BYPASSE le service de template intelligent qui causait des conflits de prompts
         // On va directement vers l'IA avec les faits du projet.
-        String prompt = "Analyze this project: Language=" + analysis.getLanguage() + 
-                        ", BuildTool=" + analysis.getBuildTool() + 
-                        ", Framework=" + analysis.getFramework();
-        String generatedContent = llmService.generate(analysis, prompt);
+        String generatedContent = llmService.generate(analysis);
 
         // Safety net: post-processing to guarantee Dockerfile correctness
         return postProcessor.process(generatedContent, analysis);
