@@ -108,10 +108,12 @@
         </dependency>
 
         <!-- ─── Spring AI + Ollama ──────────────────────────────────────── -->
+<!--
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
         </dependency>
+-->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
