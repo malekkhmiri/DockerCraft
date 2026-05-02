@@ -77,7 +77,6 @@ public class DockerfileGenerationService {
         return fallback;
     }
 
-
     private String enrichPromptWithKnowledge(String prompt, List<DockerfileKnowledge> ok, List<DockerfileKnowledge> fail) {
         StringBuilder sb = new StringBuilder(prompt);
         if (!ok.isEmpty()) {

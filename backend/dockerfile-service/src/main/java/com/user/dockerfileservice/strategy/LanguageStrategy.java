@@ -11,4 +11,7 @@ public interface LanguageStrategy {
 
     String generatePrompt(AnalysisResult analysis);
 
+    default boolean supportsOS(String os) {
+        return "linux".equalsIgnoreCase(os);
+    }
 }
