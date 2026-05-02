@@ -3,7 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Client, Stomp } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { Subject, Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+// import { environment } from '../../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
@@ -19,6 +19,8 @@ export class WebSocketService {
     }
 
     private initConnection() {
+        console.log('WebSockets are currently neutralized in serverless mode.');
+        /*
         const socket = new SockJS(environment.wsUrl);
         this.stompClient = new Client({
             webSocketFactory: () => socket,
@@ -36,6 +38,7 @@ export class WebSocketService {
         };
 
         this.stompClient.activate();
+        */
     }
 
     watchPipelines(): Observable<any> {
