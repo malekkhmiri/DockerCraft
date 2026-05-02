@@ -4,10 +4,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# Build and DEBUG: List everything in dist to find the real path
+# Build and DEBUG: List ALL files in /app to see where things go
 RUN npm run build --configuration=production && \
-    echo "--- DEBUG: LISTING DIST CONTENT ---" && \
-    find dist -name index.html && \
+    echo "--- DEBUG: LISTING ALL FILES IN /app ---" && \
+    ls -R /app && \
     echo "--- END DEBUG ---"
 
 # Stage 2: Serve the app with Nginx
