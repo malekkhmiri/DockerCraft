@@ -1,20 +1,28 @@
 package com.user.dockerfileservice.service;
 
 import com.user.dockerfileservice.dto.AnalysisResult;
-import lombok.Data;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @org.springframework.context.annotation.Lazy
 public class LLMService {
 
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class);
+
+    private static final String ERROR_DOCKERFILE = """
+            # Erreur lors de la génération
+            FROM alpine
+            CMD ["echo", "error"]
+            """;
+
     private final RestTemplate restTemplate;
 
     @Value("${OLLAMA_URL:http://dc-ollama:8080}")
@@ -23,65 +31,76 @@ public class LLMService {
     @Value("${OLLAMA_MODEL:qwen2.5-coder:3b}")
     private String modelName;
 
-    public LLMService(@org.springframework.beans.factory.annotation.Qualifier("externalRestTemplate") RestTemplate restTemplate) {
+    public LLMService(@Qualifier("externalRestTemplate") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public String generate(AnalysisResult analysis, String prompt) {
-        String dbType = analysis.getDatabaseType() != null ? analysis.getDatabaseType() : "H2 (no external DB)";
-        String javaVer = analysis.getJavaVersion();
-        
-        String systemPrompt = "You are an Elite DevOps Engineer. Task: Generate a CUSTOM Dockerfile for this SPECIFIC project.\n" +
-                "FACTS FOR THIS PROJECT (DO NOT HALLUCINATE):\n" +
-                "- TECHNOLOGY: Java " + javaVer + " (use eclipse-temurin:" + javaVer + " as base)\n" +
-                "- DATABASE: " + dbType + " (DO NOT add PostgreSQL/libpq if using MySQL)\n" +
-                "- ARTIFACT: " + analysis.getArtifactName() + "\n" +
-                "- HEALTHCHECK: " + (analysis.getHealthEndpoint() != null ? analysis.getHealthEndpoint() : "NONE (DO NOT ADD ONE IF NONE)") + "\n\n" +
-                "STRICT INSTRUCTIONS:\n" +
-                "1. MINIMALISM: If FRAMEWORK is 'java-plain', generate a MINIMAL Dockerfile. DO NOT add EXPOSE, HEALTHCHECK, or DB variables if not needed.\n" +
-                "2. DB: If DATABASE is 'H2', DO NOT add external DB drivers or ENV vars.\n" +
-                "3. If project uses MySQL, DO NOT install libpq or postgresql-client.\n" +
-                "4. Match the Java version EXACTLY (" + javaVer + ").\n" +
-                "5. Use multi-stage build (maven:3.9-eclipse-temurin-" + javaVer + " as builder).\n" +
-                "6. Use 'exec' in ENTRYPOINT: ENTRYPOINT [\"sh\", \"-c\", \"exec java ...\"].\n" +
-                "Return ONLY the Dockerfile code.\n";
-        
-        logger.info("🚀 Génération ELITE pour {} (Java {}, DB {})", analysis.getArtifactId(), javaVer, dbType);
-        
-        Map<String, Object> request = Map.of(
-            "model", modelName,
-            "prompt", systemPrompt + prompt,
-            "stream", false
-        );
+    public String generate(AnalysisResult analysis, String userPrompt) {
+        String systemPrompt = buildSystemPrompt(analysis);
+        logger.info("🚀 Génération ELITE pour {} (Java {}, DB {})",
+                analysis.getArtifactId(),
+                analysis.getJavaVersion(),
+                analysis.getDatabaseType());
+        return callOllama(systemPrompt, userPrompt);
+    }
 
+    private String buildSystemPrompt(AnalysisResult analysis) {
+        String dbType = analysis.getDatabaseType() != null
+                ? analysis.getDatabaseType()
+                : "H2 (no external DB)";
+        String javaVer = analysis.getJavaVersion();
+        String healthEndpoint = analysis.getHealthEndpoint() != null
+                ? analysis.getHealthEndpoint()
+                : "NONE (DO NOT ADD ONE IF NONE)";
+
+        return """
+                You are an Elite DevOps Engineer. Task: Generate a CUSTOM Dockerfile for this SPECIFIC project.
+                FACTS FOR THIS PROJECT (DO NOT HALLUCINATE):
+                - TECHNOLOGY: Java %s (use eclipse-temurin:%s as base)
+                - DATABASE: %s (DO NOT add PostgreSQL/libpq if using MySQL)
+                - ARTIFACT: %s
+                - HEALTHCHECK: %s
+
+                STRICT INSTRUCTIONS:
+                1. MINIMALISM: If FRAMEWORK is 'java-plain', generate a MINIMAL Dockerfile. DO NOT add EXPOSE, HEALTHCHECK, or DB variables if not needed.
+                2. DB: If DATABASE is 'H2', DO NOT add external DB drivers or ENV vars.
+                3. If project uses MySQL, DO NOT install libpq or postgresql-client.
+                4. Match the Java version EXACTLY (%s).
+                5. Use multi-stage build (maven:3.9-eclipse-temurin-%s as builder).
+                6. Use 'exec' in ENTRYPOINT: ENTRYPOINT ["sh", "-c", "exec java ..."].
+                Return ONLY the Dockerfile code, no explanation.
+                """.formatted(javaVer, javaVer, dbType, analysis.getArtifactName(),
+                        healthEndpoint, javaVer, javaVer);
+    }
+
+    private String callOllama(String systemPrompt, String prompt) {
+        Map<String, Object> request = Map.of(
+                "model", modelName,
+                "system", systemPrompt,
+                "prompt", prompt,
+                "stream", false
+        );
         try {
-            OllamaResponse response = restTemplate.postForObject(ollamaUrl + "/api/generate", request, OllamaResponse.class);
-            if (response != null && response.getResponse() != null) {
-                return cleanResponse(response.getResponse());
+            OllamaResponse response = restTemplate.postForObject(
+                    ollamaUrl + "/api/generate", request, OllamaResponse.class);
+            if (response != null && response.response() != null) {
+                return cleanResponse(response.response());
             }
         } catch (Exception e) {
             logger.error("Erreur lors de l'appel à Ollama", e);
         }
-
-        return "# Erreur lors de la génération par l'IA\nFROM alpine\nCMD [\"echo\", \"error\"]";
+        return ERROR_DOCKERFILE;
     }
 
     private String cleanResponse(String response) {
-        // 1. Enlever les balises markdown
-        String cleaned = response.replaceAll("(?s)```(?:dockerfile)?(.*?)```", "$1");
-        
-        // 2. Extraire uniquement du premier FROM jusqu'à la fin de la dernière instruction Docker probable
-        // (Cela évite les bavardages de l'IA à la fin)
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?s)(FROM\\s+.*)").matcher(cleaned);
+        String cleaned = response.replaceAll("(?s)```(?:dockerfile|docker)?(.*?)```", "$1");
+        Matcher matcher = Pattern.compile("(?s)(FROM\\s+.+)").matcher(cleaned);
         if (matcher.find()) {
-            cleaned = matcher.group(1);
+            cleaned = matcher.group(1)
+                    .replaceAll("(?m)^(?!FROM|RUN|COPY|ADD|ENV|EXPOSE|HEALTHCHECK|ENTRYPOINT|CMD|WORKDIR|ARG|LABEL|USER|VOLUME|#).*$\\n?", "");
         }
-
         return cleaned.trim();
     }
 
-    @Data
-    private static class OllamaResponse {
-        private String response;
-    }
+    private record OllamaResponse(String response) {}
 }
