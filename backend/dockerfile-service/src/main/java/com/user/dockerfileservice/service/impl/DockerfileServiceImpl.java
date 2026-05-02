@@ -124,13 +124,12 @@ public class DockerfileServiceImpl implements DockerfileService {
 
     @Override
     public String generate(AnalysisResult analysis) {
-        String generatedContent = intelligentGenerationService.generate(analysis);
-
-        // Si l'intelligentGenerationService ne donne rien de satisfaisant, on appelle LLMService directement
-        if (generatedContent == null || generatedContent.contains("error")) {
-             String prompt = "Project type: " + analysis.getFramework() + " | Build tool: " + analysis.getBuildTool();
-             generatedContent = llmService.generate(analysis, prompt);
-        }
+        // ON BYPASSE le service de template intelligent qui causait des conflits de prompts
+        // On va directement vers l'IA avec les faits du projet.
+        String prompt = "Analyze this project: Language=" + analysis.getLanguage() + 
+                        ", BuildTool=" + analysis.getBuildTool() + 
+                        ", Framework=" + analysis.getFramework();
+        String generatedContent = llmService.generate(analysis, prompt);
 
         // Safety net: post-processing to guarantee Dockerfile correctness
         return postProcessor.process(generatedContent, analysis);

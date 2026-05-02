@@ -168,12 +168,16 @@ public class DockerfilePostProcessor {
         }
         d = sb.toString();
 
-        // 4. Healthcheck path enforcement (Default to actuator for Spring)
+        // 4. Healthcheck path enforcement (ONLY use actuator if confirmed)
         if (a != null && d.contains("HEALTHCHECK")) {
-            String targetPath = a.isHasActuator() ? "/actuator/health" : (a.getHealthEndpoint() != null ? a.getHealthEndpoint() : "/actuator/health");
+            String targetPath = a.isHasActuator() ? "/actuator/health" : (a.getHealthEndpoint() != null ? a.getHealthEndpoint() : "/");
             d = d.replaceAll("(?m)(CMD wget .* http://localhost:\\d+)(/\\S*)", "$1" + targetPath);
             if (d.contains("http://localhost:" + port + "/ ")) {
                  d = d.replace("http://localhost:" + port + "/ ", "http://localhost:" + port + targetPath + " ");
+            }
+            // Sécurité matérielle : si on n'a pas d'actuator, on bannit ce mot du Dockerfile
+            if (!a.isHasActuator()) {
+                d = d.replace("/actuator/health", targetPath);
             }
         }
 
@@ -261,10 +265,12 @@ public class DockerfilePostProcessor {
     private String getMavenImage(AnalysisResult a) {
         String v = (a != null && a.getJavaVersion() != null) ? a.getJavaVersion() : "17";
         return switch (v) {
+            case "24" -> "maven:3.9.6-eclipse-temurin-24-alpine";
             case "21" -> "maven:3.9.6-eclipse-temurin-21-alpine";
+            case "17" -> "maven:3.9.6-eclipse-temurin-17-alpine";
             case "11" -> "maven:3.8.4-openjdk-11-slim";
             case "1.8", "8" -> "maven:3.9.6-eclipse-temurin-8-alpine";
-            default -> "maven:3.8.4-openjdk-17-slim";
+            default -> "maven:3.9.6-eclipse-temurin-21-alpine";
         };
     }
 
@@ -273,10 +279,12 @@ public class DockerfilePostProcessor {
             return "ubuntu:22.04";
         String v = (a != null && a.getJavaVersion() != null) ? a.getJavaVersion() : "17";
         return switch (v) {
+            case "24" -> "eclipse-temurin:24-jre-alpine";
             case "21" -> "eclipse-temurin:21-jre-alpine";
+            case "17" -> "eclipse-temurin:17-jre-alpine";
             case "11" -> "eclipse-temurin:11-jre-alpine";
             case "1.8", "8" -> "eclipse-temurin:8-jre-alpine";
-            default -> "eclipse-temurin:17-jre-alpine";
+            default -> "eclipse-temurin:21-jre-alpine";
         };
     }
 

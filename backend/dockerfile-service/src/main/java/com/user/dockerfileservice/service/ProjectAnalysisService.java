@@ -188,10 +188,9 @@ public class ProjectAnalysisService {
     private String detectJavaVersion(Document pom) {
         for (String tag : List.of("java.version", "maven.compiler.release", "maven.compiler.source")) {
             String v = getXmlTag(pom, tag);
-            if (v != null) return v;
+            if (v != null) return v.trim();
         }
-        // Fallback to highest detected if possible, otherwise default to 21 or 24 if pom mentions it
-        return "21"; // Default to a stable modern LTS
+        return "21"; // Default modern
     }
 
     private List<String> detectExtraEnvVars(String props) {
