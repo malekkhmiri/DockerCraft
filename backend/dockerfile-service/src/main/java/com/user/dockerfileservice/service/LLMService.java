@@ -54,25 +54,18 @@ public class LLMService {
         sb.append("- Java Version: ").append(javaVer).append("\n");
         sb.append("- Framework: ").append(analysis.getFramework()).append("\n");
         sb.append("- Build Tool: ").append(analysis.getBuildTool()).append("\n");
-        sb.append("- Artifact: ").append(analysis.getArtifactName()).append("\n");
+        sb.append("- Artifact Pattern: target/*.jar\n");
         sb.append("- Service Port: ").append(port).append("\n");
         sb.append("- Database Driver: ").append(dbType).append("\n");
         
-        if (analysis.isHasSecurity()) sb.append("- SECURITY: Spring Security detected. Ensure proper ENV for credentials.\n");
-        if (analysis.isHasLombok()) sb.append("- LOMBOK: Used in project.\n");
-        if (analysis.getHealthEndpoint() != null) sb.append("- HEALTHCHECK: Endpoint is ").append(analysis.getHealthEndpoint()).append("\n");
-
         sb.append("\nSTRICT ARCHITECTURAL RULES:\n");
         sb.append("1. MULTI-STAGE: Build in 'maven:3.9.6-eclipse-temurin-").append(javaVer).append("-alpine' as 'builder'.\n");
         sb.append("2. RUNTIME: Use 'eclipse-temurin:").append(javaVer).append("-jre-alpine' as 'runtime'.\n");
-        sb.append("3. SECURITY: Run as non-root user 'appuser'.\n");
-        sb.append("4. OPTIMIZATION: Use -XX:+UseContainerSupport and -XX:MaxRAMPercentage=75.0.\n");
-        sb.append("5. DYNAMIC ENV: If DB is MySQL/Postgres, use ENV variables for DB_URL, DB_USER, DB_PASS.\n");
-        if (analysis.getHealthEndpoint() != null) {
-            sb.append("6. HEALTHCHECK: Use 'wget' or 'curl' targeting http://localhost:").append(port).append(analysis.getHealthEndpoint()).append(".\n");
-        }
-        sb.append("7. ENTRYPOINT: Must use ENTRYPOINT [\"sh\", \"-c\", \"exec java $JAVA_OPTS -jar app.jar\"].\n");
-        sb.append("\nReturn ONLY the Dockerfile code.");
+        sb.append("3. COPY: Use 'COPY --from=builder /app/target/*.jar app.jar'.\n");
+        sb.append("4. SECURITY: Create user 'appuser', chown /app, and use 'USER appuser'.\n");
+        sb.append("5. HEALTHCHECK: If endpoint exists, use 'HEALTHCHECK --interval=30s --timeout=10s CMD wget --quiet --tries=1 --spider http://localhost:").append(port).append(analysis.getHealthEndpoint()).append(" || exit 1'.\n");
+        sb.append("6. ENTRYPOINT: Must be 'ENTRYPOINT [\"sh\", \"-c\", \"exec java $JAVA_OPTS -jar app.jar\"]'.\n");
+        sb.append("\nIMPORTANT: DO NOT truncate commands. Return ONLY code.");
 
         return sb.toString();
     }

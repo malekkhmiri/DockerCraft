@@ -214,9 +214,15 @@ public class ProjectAnalysisService {
         return factory.newDocumentBuilder().parse(pom.toFile());
     }
 
-    private String getXmlTag(Document doc, String tag) {
-        NodeList nodes = doc.getElementsByTagName(tag);
-        return nodes.getLength() > 0 ? nodes.item(0).getTextContent().trim() : null;
+    private String getXmlTag(Document doc, String tagName) {
+        NodeList list = doc.getElementsByTagName(tagName);
+        for (int i = 0; i < list.getLength(); i++) {
+            // On ignore les tags qui sont à l'intérieur de <parent>
+            if (!list.item(i).getParentNode().getNodeName().equals("parent")) {
+                return list.item(i).getTextContent();
+            }
+        }
+        return list.getLength() > 0 ? list.item(0).getTextContent() : null;
     }
 
     private List<String> extractModules(Document doc) {
