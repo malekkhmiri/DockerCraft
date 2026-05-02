@@ -1,13 +1,11 @@
 package com.user.dockerfileservice.service.impl;
 
-import com.user.dockerfileservice.config.RabbitMQConfig;
 import com.user.dockerfileservice.entity.Dockerfile;
 import com.user.dockerfileservice.repository.DockerfileRepository;
 import com.user.dockerfileservice.service.DockerfileService;
 import com.user.dockerfileservice.service.LLMService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import com.user.dockerfileservice.dto.ProjectResponse;
