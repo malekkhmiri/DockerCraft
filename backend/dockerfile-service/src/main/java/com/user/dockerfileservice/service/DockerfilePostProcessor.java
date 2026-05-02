@@ -124,29 +124,27 @@ public class DockerfilePostProcessor {
                 continue;
             }
 
-            // Fix 3: Multi-module Build Command & JAR Path
-            if (a != null && a.isMultiModule()) {
-                String targetModule = a.getModules().stream()
-                        .filter(m -> m.contains("admin") || m.contains("web") || m.contains("api") || m.contains("portal"))
-                        .findFirst().orElse(null);
-
-                if (targetModule != null) {
-                    // Update build command
-                    if (trimmed.startsWith("RUN mvn clean package") && !trimmed.contains("-pl")) {
-                        sb.append("RUN mvn clean package -DskipTests -B -pl ").append(targetModule).append(" -am\n");
-                        continue;
-                    }
-                    // Update JAR copy path
-                    if (trimmed.contains("COPY --from=builder") && trimmed.contains("/target/")) {
-                        sb.append("COPY --from=builder --chown=spring:spring /build/").append(targetModule).append("/target/*.jar app.jar\n");
-                        continue;
+            // Fix 3: Multi-module Build Command & JAR Path + EXCLUDE DEVTOOLS
+            if (trimmed.startsWith("RUN mvn clean package")) {
+                String cmd = trimmed;
+                if (!cmd.contains("excludeDevtools")) {
+                    cmd = cmd.replace("package", "package -Dspring-boot.repackage.excludeDevtools=true");
+                }
+                if (a != null && a.isMultiModule()) {
+                    String targetModule = a.getModules().stream()
+                            .filter(m -> m.contains("admin") || m.contains("web") || m.contains("api") || m.contains("portal"))
+                            .findFirst().orElse(null);
+                    if (targetModule != null && !cmd.contains("-pl")) {
+                        cmd = cmd.replace("package", "package -pl " + targetModule + " -am");
                     }
                 }
+                sb.append(cmd).append("\n");
+                continue;
             }
 
-            // Fix 4: Force shell form for ENTRYPOINT
+            // Fix 4: Force shell form for ENTRYPOINT WITH EXEC (SIGTERM fix)
             if (trimmed.startsWith("ENTRYPOINT ")) {
-                sb.append("ENTRYPOINT [\"sh\", \"-c\", \"java $JAVA_OPTS -jar ").append(jarName).append("\"]\n");
+                sb.append("ENTRYPOINT [\"sh\", \"-c\", \"exec java $JAVA_OPTS -jar ").append(jarName).append("\"]\n");
                 continue;
             }
 
@@ -244,7 +242,7 @@ public class DockerfilePostProcessor {
         sb.append("    JAVA_OPTS=\"-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0\"");
         if (dbUrl != null) {
             sb.append(" \\\n    SPRING_DATASOURCE_URL=").append(dbUrl);
-            sb.append(" \\\n    SPRING_DATASOURCE_USERNAME=").append(dbUser);
+            sb.append(" \\\n    SPRING_DATASOURCE_USERNAME=CHANGE_ME_INJECT_AT_RUNTIME");
             sb.append(" \\\n    SPRING_DATASOURCE_PASSWORD=CHANGE_ME_INJECT_AT_RUNTIME");
         }
         sb.append("\n");

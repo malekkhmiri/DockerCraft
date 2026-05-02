@@ -107,7 +107,7 @@ public class ProjectAnalysisService {
                .modules(modules);
 
         AnalysisResult result = builder.build();
-        result.setHealthEndpoint(resolveHealthEndpoint(result));
+        result.setHealthEndpoint(resolveHealthEndpoint(result, realRoot));
         
         if (result.getArtifactVersion() == null) result.setArtifactVersion("0.0.1-SNAPSHOT");
         result.setArtifactName(buildJarName(result));
@@ -138,11 +138,33 @@ public class ProjectAnalysisService {
         } catch (IOException e) { return false; }
     }
 
-    private String resolveHealthEndpoint(AnalysisResult a) {
+    private String resolveHealthEndpoint(AnalysisResult a, Path root) {
         if (a.isHasActuator()) return "/actuator/health";
         if (a.isHasCustomHealthEndpoint()) return "/api/health";
+        
+        // HEURISTIQUE : Scanner les fichiers Java pour trouver une route @GetMapping
+        String detectedRoute = scanForApiRoute(root);
+        if (detectedRoute != null) return detectedRoute;
+        
         if (a.isHasThymeleaf()) return "/";
-        return null;
+        return "/";
+    }
+
+    private String scanForApiRoute(Path root) {
+        try (var walk = Files.walk(root)) {
+            return walk.filter(p -> p.toString().endsWith("Controller.java"))
+                       .map(p -> {
+                           try {
+                               String content = Files.readString(p);
+                               // Chercher @RequestMapping("/...") ou @GetMapping("/...")
+                               Matcher m = Pattern.compile("@(?:Request|Get)Mapping\\s*\\(\\s*\"([^\"]+)\"").matcher(content);
+                               if (m.find()) return m.group(1);
+                               return null;
+                           } catch (IOException e) { return null; }
+                       })
+                       .filter(Objects::nonNull)
+                       .findFirst().orElse(null);
+        } catch (IOException e) { return null; }
     }
 
     private String buildJarName(AnalysisResult a) {
