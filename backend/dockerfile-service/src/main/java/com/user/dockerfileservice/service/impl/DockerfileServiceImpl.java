@@ -30,7 +30,6 @@ public class DockerfileServiceImpl implements DockerfileService {
     private final ValidatorService validatorService;
     private final DockerfilePostProcessor postProcessor;
     private final com.platform.dockerfileservice.service.DockerfileGenerationService intelligentGenerationService;
-    private final RabbitTemplate rabbitTemplate;
     private final org.springframework.web.client.RestTemplate restTemplate;
 
     public DockerfileServiceImpl(DockerfileRepository repository,
@@ -39,7 +38,6 @@ public class DockerfileServiceImpl implements DockerfileService {
             ValidatorService validatorService,
             DockerfilePostProcessor postProcessor,
             com.platform.dockerfileservice.service.DockerfileGenerationService intelligentGenerationService,
-            RabbitTemplate rabbitTemplate,
             @org.springframework.beans.factory.annotation.Qualifier("externalRestTemplate") org.springframework.web.client.RestTemplate restTemplate) {
         this.repository = repository;
         this.llmService = llmService;
@@ -47,7 +45,6 @@ public class DockerfileServiceImpl implements DockerfileService {
         this.validatorService = validatorService;
         this.postProcessor = postProcessor;
         this.intelligentGenerationService = intelligentGenerationService;
-        this.rabbitTemplate = rabbitTemplate;
         this.restTemplate = restTemplate;
     }
 
