@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 
 # Configuration
 PROJECT_ID=$(gcloud config get-value project)
