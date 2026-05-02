@@ -22,8 +22,8 @@ gcloud run deploy dc-ollama \
 
 OLLAMA_URL=$(gcloud run services describe dc-ollama --region $REGION --format='value(status.url)')
 echo "✅ Ollama prêt à : $OLLAMA_URL"
-echo "📥 Pré-chargement du modèle Codellama (cela peut prendre du temps)..."
-curl -X POST "$OLLAMA_URL/api/pull" -d '{"name": "codellama:7b"}'
+echo "📥 Pré-chargement du modèle Qwen 2.5 Coder 3B..."
+curl -X POST "$OLLAMA_URL/api/pull" -d '{"name": "qwen2.5-coder:3b"}'
 
 # 2. Compilation du JAR (On utilise le Maven du Cloud Shell)
 echo "📦 Compilation du JAR avec Maven..."

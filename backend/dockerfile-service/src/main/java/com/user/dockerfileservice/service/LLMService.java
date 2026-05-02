@@ -19,7 +19,7 @@ public class LLMService {
     @Value("${OLLAMA_URL:http://dc-ollama:8080}")
     private String ollamaUrl;
 
-    @Value("${OLLAMA_MODEL:codellama:7b}")
+    @Value("${OLLAMA_MODEL:qwen2.5-coder:3b}")
     private String modelName;
 
     public LLMService(@org.springframework.beans.factory.annotation.Qualifier("externalRestTemplate") RestTemplate restTemplate) {
