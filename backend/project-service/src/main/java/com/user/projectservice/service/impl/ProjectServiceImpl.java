@@ -65,15 +65,22 @@ public class ProjectServiceImpl implements ProjectService {
             Project savedProject = projectRepository.save(project);
             logger.info("Projet enregistré en base avec l'ID : {}", savedProject.getId());
 
-            com.user.projectservice.dto.ProjectUploadedEvent event = com.user.projectservice.dto.ProjectUploadedEvent.builder()
-                    .projectId(savedProject.getId())
-                    .userEmail(savedProject.getUserEmail())
-                    .name(savedProject.getName())
-                    .language(savedProject.getLanguage() != null ? savedProject.getLanguage().name() : null)
-                    .build();
-
-            // Logique RabbitMQ désactivée
-            logger.info("Message RabbitMQ simulé (Désactivé) pour le projet: {}", event.getName());
+            // Appel synchrone au Dockerfile Service au lieu de RabbitMQ
+            try {
+                String dockerfileServiceUrl = System.getenv("DOCKERFILE_SERVICE_URL");
+                if (dockerfileServiceUrl == null) {
+                    dockerfileServiceUrl = "https://dc-dockerfile-service-715286351060.us-central1.run.app";
+                }
+                String generateUrl = dockerfileServiceUrl + "/api/dockerfiles/project/" + savedProject.getId() + "/generate";
+                logger.info("Appel du service de génération : {}", generateUrl);
+                
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                restTemplate.postForEntity(generateUrl, null, Void.class);
+                logger.info("Demande de génération envoyée avec succès.");
+            } catch (Exception e) {
+                logger.error("Erreur lors de l'appel au service de génération : {}", e.getMessage());
+                // On ne bloque pas l'upload si la génération échoue
+            }
 
             return mapToResponse(savedProject);
         } catch (IOException e) {
